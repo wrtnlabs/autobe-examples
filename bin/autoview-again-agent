@@ -1,0 +1,782 @@
+#!/usr/bin/env bash
+#
+# autoview-again-agent — Phase 1 (inventory) + Phase 2 (journey selection)
+# deterministic implementation for the AutoView Again sidecar protocol.
+#
+# Usage:
+#   bin/autoview-again-agent <path-to-backend-project>
+#
+# Example:
+#   bin/autoview-again-agent openai/gpt-5.4/shopping
+#
+# What this does (no LLM, fully deterministic):
+#   - Phase 1: scan src/api/functional/{prefix}/, extract actors / resources /
+#     verbs, tag workflow-significant verbs.
+#   - Phase 2: pick 4-8 journey candidates per AGENT_DESIGN §5 decision rules.
+#   - Emit frontend/docs/autoview-agent-plan.md with the result.
+#
+# What this does NOT do:
+#   - Phase 0 measurements / Phase 3 scaffold (handled by bin/autoview-again)
+#   - Phase 4 mock store / Phase 5 adapters / Phase 6 pages
+#   - Phase 7 Playwright / Phase 8 final docs
+#   - LLM calls of any kind
+#   - Any auto-fix / validation loop
+#
+# Reference:
+#   - openai/gpt-5.4/AUTOVIEW_AGAIN_SIDECAR_SPEC.md (v2.2)
+#   - openai/gpt-5.4/AUTOVIEW_AGAIN_SIDECAR_AGENT_DESIGN.md (§4 Phase 1+2, §5)
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+# Workflow verb allowlist — AGENT_DESIGN §4 Phase 1
+WORKFLOW_VERBS="approve reject cancel refund dismiss restore submit resolve assign ban unban subscribe vote snooze archive"
+
+# Standard CRUD verbs (informational; not workflow-significant)
+CRUD_VERBS="index at create update erase"
+
+# ---------- helpers ----------
+
+color() { local c=$1; shift; printf "\033[%sm%s\033[0m\n" "$c" "$*"; }
+info() { color "1;34" "i $*"; }
+ok()   { color "1;32" "v $*"; }
+warn() { color "1;33" "! $*"; }
+err()  { color "1;31" "x $*" >&2; }
+
+usage() {
+  cat <<EOF
+autoview-again-agent — Phase 1 + Phase 2 deterministic implementation
+
+Usage:
+  $(basename "$0") <path-to-backend-project>
+
+Arguments:
+  path-to-backend-project    Path relative to the autobe-examples root, or
+                             absolute path. Must contain src/api/functional
+                             and src/api/structures.
+
+Examples:
+  $(basename "$0") openai/gpt-5.4/shopping
+  $(basename "$0") openai/gpt-5.4/erp
+  $(basename "$0") qwen/qwen3.5-27b/reddit
+
+What you get:
+  {project}/frontend/docs/autoview-agent-plan.md
+
+This file contains:
+  - actor list (extracted from {prefix}/auth/)
+  - resource inventory (per actor + global)
+  - operation verbs per resource
+  - workflow-significant verbs tagged
+  - risk signals (empty {} / null|null / approval-shape resources)
+  - 4-8 recommended journeys (per AGENT_DESIGN §5 decision rules)
+
+This file is the input contract for the next agent phase (Phase 4 mock store).
+It does NOT replace the wrapper-prefilled docs/api-issues.md baseline.
+EOF
+}
+
+# ---------- args ----------
+
+if [[ $# -ne 1 ]]; then
+  usage
+  exit 1
+fi
+
+PROJECT_PATH=$1
+
+# Resolve to absolute path. If relative, anchor at REPO_ROOT.
+if [[ "$PROJECT_PATH" != /* ]]; then
+  PROJECT_PATH="$REPO_ROOT/$PROJECT_PATH"
+fi
+PROJECT_PATH="$(cd "$PROJECT_PATH" 2>/dev/null && pwd)" || {
+  err "Project path not found: $1"
+  exit 1
+}
+
+# ---------- validate input ----------
+
+FUNCTIONAL_DIR=""
+if [[ -d "$PROJECT_PATH/src/api/functional" ]]; then
+  FUNCTIONAL_DIR="$PROJECT_PATH/src/api/functional"
+elif [[ -d "$PROJECT_PATH/frontend/api/functional" ]]; then
+  # frontend already bootstrapped — wrapper-copied SDK
+  FUNCTIONAL_DIR="$PROJECT_PATH/frontend/api/functional"
+else
+  err "No functional dir found. Expected one of:"
+  err "  $PROJECT_PATH/src/api/functional"
+  err "  $PROJECT_PATH/frontend/api/functional"
+  exit 1
+fi
+
+STRUCTURES_DIR=""
+if [[ -d "$PROJECT_PATH/src/api/structures" ]]; then
+  STRUCTURES_DIR="$PROJECT_PATH/src/api/structures"
+elif [[ -d "$PROJECT_PATH/frontend/api/structures" ]]; then
+  STRUCTURES_DIR="$PROJECT_PATH/frontend/api/structures"
+else
+  warn "No structures dir found — risk signal detection will be skipped"
+fi
+
+FRONTEND_DIR="$PROJECT_PATH/frontend"
+DOCS_DIR="$FRONTEND_DIR/docs"
+PLAN_FILE="$DOCS_DIR/autoview-agent-plan.md"
+
+if [[ ! -d "$FRONTEND_DIR" ]]; then
+  err "frontend/ not found. Run bin/autoview-again first to bootstrap."
+  err "  bin/autoview-again $1"
+  exit 1
+fi
+
+mkdir -p "$DOCS_DIR"
+
+PROJECT_NAME="$(basename "$PROJECT_PATH")"
+info "project=$PROJECT_NAME"
+info "functional=$FUNCTIONAL_DIR"
+info "structures=${STRUCTURES_DIR:-<none>}"
+
+# ---------- Phase 1: discover prefix + actors ----------
+
+# {prefix} is the single subdir under functional/ (skipping index.ts).
+PREFIXES=$(find "$FUNCTIONAL_DIR" -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | sort)
+PREFIX_COUNT=$(echo "$PREFIXES" | grep -c .)
+if [[ $PREFIX_COUNT -ne 1 ]]; then
+  err "Expected exactly one prefix dir under $FUNCTIONAL_DIR, found $PREFIX_COUNT:"
+  echo "$PREFIXES" >&2
+  exit 1
+fi
+PREFIX="$PREFIXES"
+PREFIX_DIR="$FUNCTIONAL_DIR/$PREFIX"
+ok "prefix=$PREFIX"
+
+# Actors come from {prefix}/auth/{actor}/. This is the only authoritative source.
+AUTH_DIR="$PREFIX_DIR/auth"
+ACTORS=""
+if [[ -d "$AUTH_DIR" ]]; then
+  ACTORS=$(find "$AUTH_DIR" -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | sort)
+fi
+
+if [[ -z "$ACTORS" ]]; then
+  warn "No actors found under $AUTH_DIR — single-actor or no-auth project"
+fi
+
+ACTOR_COUNT=$(echo "$ACTORS" | grep -c . || true)
+ok "actors=$ACTOR_COUNT [$(echo "$ACTORS" | tr '\n' ' ')]"
+
+# ---------- Phase 1: discover resources ----------
+
+# A "resource" is any directory under {prefix}/{actor}/ or directly under
+# {prefix}/ that contains an index.ts (i.e., has at least one operation).
+#
+# We classify each resource as:
+#   - actor-owned: lives under {prefix}/{actor}/{resource}/
+#   - global:      lives under {prefix}/{resource}/
+
+# Build a flat list: lines of the form `<scope>\t<resource>\t<verbs-csv>`
+# where scope is either "global" or the actor name.
+RESOURCE_TSV="$(mktemp)"
+JOURNEY_TSV="$(mktemp)"
+RISK_TSV="$(mktemp)"
+AUTH_OPS_TSV="$(mktemp)"
+trap 'rm -f "$RESOURCE_TSV" "$JOURNEY_TSV" "$RISK_TSV" "$AUTH_OPS_TSV"' EXIT
+
+# Walk all index.ts files under {prefix}/, classify, extract verbs.
+while IFS= read -r index_file; do
+  rel="${index_file#$PREFIX_DIR/}"     # actor/resource/.../index.ts OR resource/.../index.ts
+  dir_path="${rel%/index.ts}"          # actor/resource/... OR resource/...
+
+  # Skip the prefix-level index.ts (no resource).
+  if [[ "$dir_path" == "" || "$dir_path" == "auth" ]]; then
+    continue
+  fi
+
+  # First path segment.
+  first="${dir_path%%/*}"
+  rest="${dir_path#*/}"
+  if [[ "$rest" == "$dir_path" ]]; then
+    rest=""  # no further segments
+  fi
+
+  # Skip auth/{actor} dirs themselves (they are auth endpoints, not resources).
+  if [[ "$first" == "auth" ]]; then
+    continue
+  fi
+
+  # Determine scope + resource name.
+  scope=""
+  resource=""
+  if echo "$ACTORS" | grep -qx "$first"; then
+    # actor-owned resource
+    scope="$first"
+    resource="$rest"
+  else
+    # global resource
+    scope="global"
+    resource="$dir_path"
+  fi
+
+  if [[ -z "$resource" ]]; then
+    continue
+  fi
+
+  # Extract verbs from this index.ts.
+  verbs=$(grep -E '^export async function ' "$index_file" 2>/dev/null \
+    | sed -E 's/^export async function ([a-zA-Z0-9_]+)\(.*/\1/' \
+    | tr '\n' ',' | sed 's/,$//' || true)
+
+  if [[ -z "$verbs" ]]; then
+    continue
+  fi
+
+  printf "%s\t%s\t%s\n" "$scope" "$resource" "$verbs" >> "$RESOURCE_TSV"
+done < <(find "$PREFIX_DIR" -name index.ts -type f | LC_ALL=C sort)
+
+# Sort once more by scope + resource for deterministic downstream walks.
+LC_ALL=C sort -t$'\t' -k1,1 -k2,2 -o "$RESOURCE_TSV" "$RESOURCE_TSV"
+
+RESOURCE_COUNT=$(wc -l < "$RESOURCE_TSV" | tr -d ' ')
+ok "resources=$RESOURCE_COUNT (across actors + global)"
+
+# ---------- Phase 1: also collect auth endpoints (for actor-owned tracking) ----------
+
+if [[ -n "$ACTORS" && -d "$AUTH_DIR" ]]; then
+  while IFS= read -r actor; do
+    auth_index="$AUTH_DIR/$actor/index.ts"
+    if [[ -f "$auth_index" ]]; then
+      auth_verbs=$(grep -E '^export async function ' "$auth_index" 2>/dev/null \
+        | sed -E 's/^export async function ([a-zA-Z0-9_]+)\(.*/\1/' \
+        | tr '\n' ',' | sed 's/,$//' || true)
+      printf "%s\t%s\n" "$actor" "$auth_verbs" >> "$AUTH_OPS_TSV"
+    fi
+  done <<< "$ACTORS"
+fi
+
+# ---------- Phase 1: collect workflow verbs that appear in this project ----------
+
+# A verb is workflow-significant if it appears in any resource's verb list AND
+# is in the WORKFLOW_VERBS allowlist.
+PRESENT_WORKFLOW_VERBS=""
+for v in $WORKFLOW_VERBS; do
+  if cut -f3 "$RESOURCE_TSV" | tr ',' '\n' | grep -qx "$v"; then
+    PRESENT_WORKFLOW_VERBS="$PRESENT_WORKFLOW_VERBS $v"
+  fi
+done
+PRESENT_WORKFLOW_VERBS=$(echo "$PRESENT_WORKFLOW_VERBS" | xargs)
+ok "workflow_verbs=[$PRESENT_WORKFLOW_VERBS]"
+
+# ---------- Phase 1: risk signals from structures/ ----------
+
+EMPTY_DTO_COUNT=0
+NULL_NULL_COUNT=0
+
+if [[ -n "$STRUCTURES_DIR" ]]; then
+  # Empty {} DTOs (H1 from Phase 0)
+  while IFS=: read -r file _ _; do
+    [[ -z "$file" ]] && continue
+    base=$(basename "$file" .ts)
+    # Strip leading 'I' and prefix-derived chunk to guess resource match.
+    # We just record the raw DTO name; matching to resource is done later.
+    printf "empty_dto\t%s\n" "$base" >> "$RISK_TSV"
+    EMPTY_DTO_COUNT=$((EMPTY_DTO_COUNT + 1))
+  done < <(grep -nH "= {};" "$STRUCTURES_DIR"/*.ts 2>/dev/null || true)
+
+  # null | null fields
+  while IFS=: read -r file _ _; do
+    [[ -z "$file" ]] && continue
+    base=$(basename "$file" .ts)
+    printf "null_null\t%s\n" "$base" >> "$RISK_TSV"
+    NULL_NULL_COUNT=$((NULL_NULL_COUNT + 1))
+  done < <(grep -nH "null | null" "$STRUCTURES_DIR"/*.ts 2>/dev/null || true)
+fi
+
+# Approval-shape resources: resource name contains a workflow keyword OR
+# a workflow verb appears in its operation list.
+APPROVAL_KEYWORDS="approval request review moderation ban report decision dispute audit snapshot"
+while IFS=$'\t' read -r scope resource verbs; do
+  matched=""
+  # Check resource name
+  for kw in $APPROVAL_KEYWORDS; do
+    if echo "$resource" | grep -qiE "(^|[/_-])${kw}(s|es)?(/|$|_)"; then
+      matched="$kw"
+      break
+    fi
+  done
+  if [[ -z "$matched" ]]; then
+    # Check verb list against workflow verbs
+    for v in $WORKFLOW_VERBS; do
+      if echo "$verbs" | tr ',' '\n' | grep -qx "$v"; then
+        matched="verb:$v"
+        break
+      fi
+    done
+  fi
+  if [[ -n "$matched" ]]; then
+    printf "approval_shape\t%s\t%s\t%s\n" "$scope" "$resource" "$matched" >> "$RISK_TSV"
+  fi
+done < "$RESOURCE_TSV"
+
+APPROVAL_SHAPE_COUNT=$(grep -c "^approval_shape" "$RISK_TSV" || true)
+
+ok "risk: empty_dto=$EMPTY_DTO_COUNT null_null=$NULL_NULL_COUNT approval_shape=$APPROVAL_SHAPE_COUNT"
+
+# ---------- Phase 2: journey selection ----------
+
+# Output: lines of the form `<priority>\t<route>\t<actor>\t<source-verbs>\t<why>`
+SELECTED_RESOURCES=""
+
+# Helper: has this <scope:resource> already been picked?
+already_selected() {
+  local key=$1
+  echo "$SELECTED_RESOURCES" | tr ' ' '\n' | grep -qx "$key"
+}
+
+mark_selected() {
+  SELECTED_RESOURCES="$SELECTED_RESOURCES $1"
+}
+
+# Helper: format a journey line.
+emit_journey() {
+  local priority=$1 route=$2 scope=$3 verbs=$4 why=$5
+  printf "%s\t%s\t%s\t%s\t%s\n" "$priority" "$route" "$scope" "$verbs" "$why" >> "$JOURNEY_TSV"
+}
+
+# Rule 1: Happy path of primary domain entity.
+# Heuristic: a top-level (depth-1, no `/`) global resource with both `index` and
+# `at`, preferring more operations. Actor list resources (the actor name itself
+# or its plural form) are NOT happy-path candidates since those are admin views,
+# not customer-facing entities.
+ACTOR_LIST_NAMES=""
+if [[ -n "$ACTORS" ]]; then
+  while IFS= read -r a; do
+    [[ -z "$a" ]] && continue
+    ACTOR_LIST_NAMES="$ACTOR_LIST_NAMES $a ${a}s"
+  done <<< "$ACTORS"
+fi
+
+is_actor_list_name() {
+  local name=$1
+  for x in $ACTOR_LIST_NAMES; do
+    [[ "$name" == "$x" ]] && return 0
+  done
+  return 1
+}
+
+PRIMARY_RESOURCE=""
+PRIMARY_VERBS=""
+PRIMARY_OPS=0
+while IFS=$'\t' read -r scope resource verbs; do
+  if [[ "$scope" != "global" ]]; then continue; fi
+  # Top-level only (no nested path).
+  if [[ "$resource" == */* ]]; then continue; fi
+  # Skip actor list views.
+  if is_actor_list_name "$resource"; then continue; fi
+  if ! echo "$verbs" | tr ',' '\n' | grep -qx "index"; then continue; fi
+  if ! echo "$verbs" | tr ',' '\n' | grep -qx "at"; then continue; fi
+  ops=$(echo "$verbs" | tr ',' '\n' | wc -l | tr -d ' ')
+  if [[ $ops -gt $PRIMARY_OPS ]]; then
+    PRIMARY_RESOURCE="$resource"
+    PRIMARY_VERBS="$verbs"
+    PRIMARY_OPS=$ops
+  fi
+done < "$RESOURCE_TSV"
+
+if [[ -n "$PRIMARY_RESOURCE" ]]; then
+  emit_journey 1 "$PRIMARY_RESOURCE" "guest-or-primary-actor" "$PRIMARY_VERBS" \
+    "Happy path: browsable + detail-viewable global resource ($PRIMARY_OPS ops)"
+  mark_selected "global:$PRIMARY_RESOURCE"
+fi
+
+# Rule 2: If null|null > 0, pick a journey on the affected resource (reject/cancel flow).
+# Two passes:
+#   2a) prefer a resource that BOTH name-matches the DTO AND has a workflow verb
+#       (reject / cancel / refund / dismiss).
+#   2b) fallback: a resource whose name stem matches the DTO (workflow-verb
+#       missing IS the finding — record it anyway).
+if [[ $NULL_NULL_COUNT -gt 0 ]]; then
+  # Pass 2a
+  matched_p2=""
+  while IFS=$'\t' read -r kind dto; do
+    if [[ "$kind" != "null_null" ]]; then continue; fi
+    while IFS=$'\t' read -r scope resource verbs; do
+      key="$scope:$resource"
+      already_selected "$key" && continue
+      hit=""
+      for v in reject cancel refund dismiss; do
+        if echo "$verbs" | tr ',' '\n' | grep -qx "$v"; then
+          hit="$v"
+          break
+        fi
+      done
+      if [[ -n "$hit" ]]; then
+        emit_journey 2 "$resource" "$scope" "$verbs" \
+          "null|null reject/cancel flow: $dto -> verb:$hit"
+        mark_selected "$key"
+        matched_p2="yes"
+        break 2
+      fi
+    done < "$RESOURCE_TSV"
+  done < "$RISK_TSV"
+  # Pass 2b — fallback: name-stem match without workflow verb
+  if [[ -z "$matched_p2" ]]; then
+    while IFS=$'\t' read -r kind dto; do
+      if [[ "$kind" != "null_null" ]]; then continue; fi
+      d_lower=$(echo "$dto" | tr '[:upper:]' '[:lower:]' | sed 's|_||g')
+      while IFS=$'\t' read -r scope resource verbs; do
+        key="$scope:$resource"
+        already_selected "$key" && continue
+        r_stem=$(echo "$resource" | tr '[:upper:]' '[:lower:]' | sed 's|.*/||;s|_||g;s|s$||')
+        if [[ ${#r_stem} -ge 4 ]] && echo "$d_lower" | grep -q "$r_stem"; then
+          emit_journey 2 "$resource" "$scope" "$verbs" \
+            "null|null in $dto — resource matched by name stem (no reject/cancel verb present — IS the finding)"
+          mark_selected "$key"
+          break 2
+        fi
+      done < "$RESOURCE_TSV"
+    done < "$RISK_TSV"
+  fi
+fi
+
+# Rule 3: If empty {} > 0, pick a journey that touches an affected resource.
+if [[ $EMPTY_DTO_COUNT -gt 0 ]]; then
+  while IFS=$'\t' read -r kind dto; do
+    if [[ "$kind" != "empty_dto" ]]; then continue; fi
+    while IFS=$'\t' read -r scope resource verbs; do
+      key="$scope:$resource"
+      already_selected "$key" && continue
+      # Loose stem match: lowercase resource name appears anywhere in DTO name.
+      r_stem=$(echo "$resource" | tr '[:upper:]' '[:lower:]' | sed 's|.*/||;s|_||g;s|s$||')
+      d_lower=$(echo "$dto" | tr '[:upper:]' '[:lower:]' | sed 's|_||g')
+      if [[ ${#r_stem} -ge 4 ]] && echo "$d_lower" | grep -q "$r_stem"; then
+        emit_journey 3 "$resource" "$scope" "$verbs" \
+          "Empty DTO touches this resource: $dto"
+        mark_selected "$key"
+        break 2
+      fi
+    done < "$RESOURCE_TSV"
+  done < "$RISK_TSV"
+fi
+
+# Rule 4: One approval/queue journey if any approval-shape resource exists OR
+# workflow verbs are present. Prefers a resource at depth 1 (no `/`) so it lands
+# on the parent queue rather than a deeply nested snapshot list.
+if [[ -n "$PRESENT_WORKFLOW_VERBS" || $APPROVAL_SHAPE_COUNT -gt 0 ]]; then
+  picked=""
+  # Pass 4a: depth-1 approval-shape resources first
+  while IFS=$'\t' read -r kind scope resource matched; do
+    if [[ "$kind" != "approval_shape" ]]; then continue; fi
+    if [[ "$resource" == */* ]]; then continue; fi
+    key="$scope:$resource"
+    already_selected "$key" && continue
+    verbs=$(awk -F'\t' -v s="$scope" -v r="$resource" '$1==s && $2==r {print $3; exit}' "$RESOURCE_TSV")
+    emit_journey 4 "$resource" "$scope" "$verbs" \
+      "Approval/queue: matched=$matched"
+    mark_selected "$key"
+    picked="yes"
+    break
+  done < "$RISK_TSV"
+  # Pass 4b: any approval-shape resource (depth-N)
+  if [[ -z "$picked" ]]; then
+    while IFS=$'\t' read -r kind scope resource matched; do
+      if [[ "$kind" != "approval_shape" ]]; then continue; fi
+      key="$scope:$resource"
+      already_selected "$key" && continue
+      verbs=$(awk -F'\t' -v s="$scope" -v r="$resource" '$1==s && $2==r {print $3; exit}' "$RESOURCE_TSV")
+      emit_journey 4 "$resource" "$scope" "$verbs" \
+        "Approval/queue: matched=$matched"
+      mark_selected "$key"
+      break
+    done < "$RISK_TSV"
+  fi
+fi
+
+# Rule 5: One actor-owned "my X" journey per actor (max 3 actors).
+# Prefer depth-1 resources (no `/`) so the journey lands on the actor's main
+# entity, not a deeply nested snapshot list.
+ACTOR_PICKS=0
+if [[ -n "$ACTORS" ]]; then
+  while IFS= read -r actor; do
+    [[ -z "$actor" ]] && continue
+    [[ $ACTOR_PICKS -ge 3 ]] && break
+    chosen=""
+    chosen_verbs=""
+    # Pass 5a: depth-1 with index
+    while IFS=$'\t' read -r scope resource verbs; do
+      [[ "$scope" != "$actor" ]] && continue
+      [[ "$resource" == */* ]] && continue
+      key="$scope:$resource"
+      already_selected "$key" && continue
+      if echo "$verbs" | tr ',' '\n' | grep -qx "index"; then
+        chosen="$resource"
+        chosen_verbs="$verbs"
+        break
+      fi
+    done < "$RESOURCE_TSV"
+    # Pass 5b: any depth with index
+    if [[ -z "$chosen" ]]; then
+      while IFS=$'\t' read -r scope resource verbs; do
+        [[ "$scope" != "$actor" ]] && continue
+        key="$scope:$resource"
+        already_selected "$key" && continue
+        if echo "$verbs" | tr ',' '\n' | grep -qx "index"; then
+          chosen="$resource"
+          chosen_verbs="$verbs"
+          break
+        fi
+      done < "$RESOURCE_TSV"
+    fi
+    if [[ -n "$chosen" ]]; then
+      emit_journey 5 "$chosen" "$actor" "$chosen_verbs" \
+        "Actor-owned 'my X' for $actor"
+      mark_selected "$actor:$chosen"
+      ACTOR_PICKS=$((ACTOR_PICKS + 1))
+    fi
+  done <<< "$ACTORS"
+fi
+
+# Rule 7: One audit/log/snapshot journey if domain has them.
+# Prefer depth-1 over deeply-nested matches (audit/log views are typically a
+# top-level admin route, not a tail of a snapshot/history sub-tree).
+audit_picked=""
+# Pass 7a: depth-1
+while IFS=$'\t' read -r scope resource verbs; do
+  key="$scope:$resource"
+  already_selected "$key" && continue
+  [[ "$resource" == */* ]] && continue
+  if echo "$resource" | grep -qiE "(audit|log|history|snapshot|activit)"; then
+    if echo "$verbs" | tr ',' '\n' | grep -qx "index"; then
+      emit_journey 7 "$resource" "$scope" "$verbs" \
+        "Audit/log/snapshot read flow"
+      mark_selected "$key"
+      audit_picked="yes"
+      break
+    fi
+  fi
+done < "$RESOURCE_TSV"
+# Pass 7b: any depth
+if [[ -z "$audit_picked" ]]; then
+  while IFS=$'\t' read -r scope resource verbs; do
+    key="$scope:$resource"
+    already_selected "$key" && continue
+    if echo "$resource" | grep -qiE "(audit|log|history|snapshot|activit)"; then
+      if echo "$verbs" | tr ',' '\n' | grep -qx "index"; then
+        emit_journey 7 "$resource" "$scope" "$verbs" \
+          "Audit/log/snapshot read flow"
+        mark_selected "$key"
+        break
+      fi
+    fi
+  done < "$RESOURCE_TSV"
+fi
+
+# Rule 8: cap at 8 (handled by selection above; no-op here).
+JOURNEY_COUNT=$(wc -l < "$JOURNEY_TSV" | tr -d ' ')
+ok "journeys=$JOURNEY_COUNT"
+
+if [[ $JOURNEY_COUNT -lt 4 ]]; then
+  warn "Selected only $JOURNEY_COUNT journeys (target 4-8). Plan still emitted."
+fi
+
+# ---------- Emit autoview-agent-plan.md ----------
+
+NOW_ISO=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+PLAN_TMP="$(mktemp)"
+
+{
+  echo "# AutoView Agent Plan — $PROJECT_NAME"
+  echo
+  echo "Generated: $NOW_ISO"
+  echo "Generator: bin/autoview-again-agent (Phase 1+2 deterministic)"
+  echo "Source: $FUNCTIONAL_DIR"
+  echo
+  echo "## Prefix"
+  echo
+  echo "- \`$PREFIX\`"
+  echo
+  echo "## Actors"
+  echo
+  if [[ -z "$ACTORS" ]]; then
+    echo "- (none — single-actor or no-auth project)"
+  else
+    while IFS= read -r actor; do
+      [[ -z "$actor" ]] && continue
+      auth_verbs=$(awk -F'\t' -v a="$actor" '$1==a {print $2; exit}' "$AUTH_OPS_TSV")
+      if [[ -n "$auth_verbs" ]]; then
+        echo "- **$actor** — auth ops: \`$auth_verbs\`"
+      else
+        echo "- **$actor**"
+      fi
+    done <<< "$ACTORS"
+  fi
+  echo
+  echo "## Resource Inventory"
+  echo
+  echo "Total: $RESOURCE_COUNT resources"
+  echo
+
+  # Group by scope: global first, then each actor in order.
+  echo "### Global resources"
+  echo
+  global_count=$(awk -F'\t' '$1=="global"' "$RESOURCE_TSV" | wc -l | tr -d ' ')
+  if [[ $global_count -eq 0 ]]; then
+    echo "_(none)_"
+  else
+    echo "| Resource | Verbs |"
+    echo "|---|---|"
+    awk -F'\t' '$1=="global"' "$RESOURCE_TSV" \
+      | sort -t$'\t' -k2 \
+      | while IFS=$'\t' read -r scope resource verbs; do
+          echo "| \`$resource\` | \`$verbs\` |"
+        done
+  fi
+  echo
+
+  if [[ -n "$ACTORS" ]]; then
+    while IFS= read -r actor; do
+      [[ -z "$actor" ]] && continue
+      actor_count=$(awk -F'\t' -v a="$actor" '$1==a' "$RESOURCE_TSV" | wc -l | tr -d ' ')
+      echo "### Actor-owned: $actor ($actor_count resources)"
+      echo
+      if [[ $actor_count -eq 0 ]]; then
+        echo "_(none — actor has auth endpoints only)_"
+      else
+        echo "| Resource | Verbs |"
+        echo "|---|---|"
+        awk -F'\t' -v a="$actor" '$1==a' "$RESOURCE_TSV" \
+          | sort -t$'\t' -k2 \
+          | while IFS=$'\t' read -r scope resource verbs; do
+              echo "| \`$resource\` | \`$verbs\` |"
+            done
+      fi
+      echo
+    done <<< "$ACTORS"
+  fi
+
+  echo "## Workflow Verbs Present"
+  echo
+  if [[ -z "$PRESENT_WORKFLOW_VERBS" ]]; then
+    echo "_(none from allowlist found in this project)_"
+  else
+    for v in $PRESENT_WORKFLOW_VERBS; do
+      occurrences=$(awk -F'\t' -v v="$v" 'BEGIN{c=0} { n=split($3,a,","); for(i=1;i<=n;i++) if(a[i]==v) { print $1"/"$2; c++; break } } END{}' "$RESOURCE_TSV")
+      count=$(echo "$occurrences" | grep -c . || true)
+      echo "- **\`$v\`** — $count occurrence(s):"
+      echo "$occurrences" | while IFS= read -r occ; do
+        [[ -z "$occ" ]] && continue
+        echo "  - \`$occ\`"
+      done
+    done
+  fi
+  echo
+  echo "_Allowlist_: \`$WORKFLOW_VERBS\`"
+  echo
+  echo "## Risk Signals"
+  echo
+  echo "### Empty DTO (\`= {};\`) — H1 from Phase 0"
+  echo
+  if [[ $EMPTY_DTO_COUNT -eq 0 ]]; then
+    echo "_(none)_"
+  else
+    echo "Count: **$EMPTY_DTO_COUNT** occurrence(s)"
+    echo
+    grep "^empty_dto" "$RISK_TSV" | sort -u | head -20 | while IFS=$'\t' read -r kind dto; do
+      echo "- \`$dto\`"
+    done
+  fi
+  echo
+  echo "### \`null | null\` field — generation degeneration"
+  echo
+  if [[ $NULL_NULL_COUNT -eq 0 ]]; then
+    echo "_(none)_"
+  else
+    echo "Count: **$NULL_NULL_COUNT** occurrence(s)"
+    echo
+    grep "^null_null" "$RISK_TSV" | sort -u | head -20 | while IFS=$'\t' read -r kind dto; do
+      echo "- \`$dto\`"
+    done
+  fi
+  echo
+  echo "### Approval/moderation-shape resources"
+  echo
+  if [[ $APPROVAL_SHAPE_COUNT -eq 0 ]]; then
+    echo "_(none — no approval/moderation/audit-shape resources detected)_"
+  else
+    echo "Count: **$APPROVAL_SHAPE_COUNT** resource(s)"
+    echo
+    echo "| Scope | Resource | Match |"
+    echo "|---|---|---|"
+    grep "^approval_shape" "$RISK_TSV" | sort -u -t$'\t' -k2,3 | while IFS=$'\t' read -r kind scope resource matched; do
+      echo "| $scope | \`$resource\` | $matched |"
+    done
+  fi
+  echo
+  echo "### Actor-owned coverage"
+  echo
+  if [[ -z "$ACTORS" ]]; then
+    echo "_(no actors — N/A)_"
+  else
+    echo "| Actor | Owned resources | Has 'my X'-style index? |"
+    echo "|---|---:|---|"
+    while IFS= read -r actor; do
+      [[ -z "$actor" ]] && continue
+      owned=$(awk -F'\t' -v a="$actor" '$1==a' "$RESOURCE_TSV" | wc -l | tr -d ' ')
+      has_index=$(awk -F'\t' -v a="$actor" '$1==a {n=split($3,v,","); for(i=1;i<=n;i++) if(v[i]=="index") {print "yes"; exit}}' "$RESOURCE_TSV")
+      [[ -z "$has_index" ]] && has_index="no"
+      echo "| $actor | $owned | $has_index |"
+    done <<< "$ACTORS"
+  fi
+  echo
+  echo "## Recommended Journeys"
+  echo
+  if [[ $JOURNEY_COUNT -eq 0 ]]; then
+    echo "_(none recommended — review project manually)_"
+  else
+    echo "Count: **$JOURNEY_COUNT** (target 4-8 per AGENT_DESIGN §5)"
+    echo
+    echo "| # | Priority | Route | Scope | Source verbs | Reason |"
+    echo "|---|---:|---|---|---|---|"
+    n=0
+    sort -t$'\t' -k1,1n -k2 "$JOURNEY_TSV" | while IFS=$'\t' read -r priority route scope verbs why; do
+      n=$((n + 1))
+      echo "| $n | P$priority | \`$route\` | $scope | \`$verbs\` | $why |"
+    done
+  fi
+  echo
+  echo "### Decision rules applied (AGENT_DESIGN §5)"
+  echo
+  echo "- P1: happy path — global resource with most ops + index/at coverage"
+  echo "- P2: null|null reject/cancel flow (only if Phase 0 found null|null)"
+  echo "- P3: empty {} touched (only if Phase 0 found empty DTOs)"
+  echo "- P4: approval/queue (only if workflow verbs present)"
+  echo "- P5: actor-owned 'my X' (max 3 actors)"
+  echo "- P7: audit/log read"
+  echo "- Cap: 8 journeys (stress-test mode caps at 6 — apply manually if relevant)"
+  echo
+  echo "## Next steps"
+  echo
+  echo "1. Review the recommended journeys above. Override manually if needed before Phase 4."
+  echo "2. Phase 4 (mock store): write \`lib/sdk/mock/store.ts\` with deterministic seed for the picked resources."
+  echo "3. Phase 5 (adapters): write \`lib/sdk/{entity}.ts\` for each picked resource. Document any SDK quirks discovered (especially against the risk signals above) in adapter file headers AND in \`docs/api-issues.md\`."
+  echo "4. Phase 6-8: pages / Playwright / final docs synthesis."
+  echo
+  echo "_This plan is generated deterministically and should be regenerated after any change to \`src/api/\`._"
+} > "$PLAN_TMP"
+
+mv "$PLAN_TMP" "$PLAN_FILE"
+
+ok "wrote $PLAN_FILE"
+
+# ---------- summary ----------
+
+echo
+info "Phase 1+2 complete."
+echo "  - $RESOURCE_COUNT resources"
+echo "  - $ACTOR_COUNT actors"
+echo "  - workflow verbs: [$PRESENT_WORKFLOW_VERBS]"
+echo "  - risk: empty_dto=$EMPTY_DTO_COUNT null_null=$NULL_NULL_COUNT approval_shape=$APPROVAL_SHAPE_COUNT"
+echo "  - journeys: $JOURNEY_COUNT"
+echo
+info "Plan: $PLAN_FILE"
+echo
+info "Next: review the plan, then proceed to Phase 4 manually (or with the future Phase 4+ agent)."
