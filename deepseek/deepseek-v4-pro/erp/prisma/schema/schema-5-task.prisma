@@ -1,0 +1,211 @@
+/// Work units within a project with status workflow, priority, optional
+/// assignee, and optional parent task for one-level subtask nesting.
+///
+/// Each task belongs to exactly one {@link erp_hrm_projects} and tracks its
+/// progress through four statuses: open, in-progress, completed, and closed.
+/// Tasks can be assigned to a single employee who must be a member of the
+/// parent project through {@link erp_hrm_project_members}. A priority level
+/// indicates relative urgency.
+///
+/// Tasks support one level of subtask nesting through a self-referencing
+/// parent relationship. A task with a parent is a subtask; a parent task
+/// cannot itself have a parent, enforcing a maximum depth of one. Every
+/// status change is automatically recorded as an immutable entry in {@link
+/// erp_hrm_task_histories}, creating a complete audit trail of the task's
+/// lifecycle.
+///
+/// @namespace task
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_hrm_tasks {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The project this task belongs to.
+  ///
+  /// Every task is scoped to exactly one project. Deleting a project cascades
+  /// to remove all its tasks and associated history entries. The project must
+  /// be in active status for new timelogs to be recorded against its tasks via
+  /// {@link erp_hrm_timelogs}.
+  erp_hrm_project_id String
+  
+  /// The employee assigned to work on this task.
+  ///
+  /// Optional assignment linking to an {@link erp_hrm_employees} record. The
+  /// assigned employee must hold a membership in the task's parent project
+  /// through {@link erp_hrm_project_members}. When an employee is removed from
+  /// the project, their task assignments within that project are cleared,
+  /// leaving the tasks unassigned.
+  erp_hrm_assigned_employee_id String?
+  
+  /// The parent task when this is a subtask, establishing a one-level nesting
+  /// hierarchy.
+  ///
+  /// Self-referencing relationship to {@link erp_hrm_tasks}. Only one level of
+  /// nesting is permitted: a task that already has a parent cannot serve as a
+  /// parent to another task. The parent task must belong to the same project.
+  /// A task cannot reference itself as its parent. Subtask relationships are
+  /// independent of status — a parent and its subtasks can have different
+  /// statuses.
+  erp_hrm_parent_task_id String?
+  
+  /// The required title of the task.
+  ///
+  /// Serves as the primary identifier for the task in lists and views. Must
+  /// not be empty.
+  title String
+  
+  /// Optional detailed description providing context about the task's purpose,
+  /// scope, or acceptance criteria.
+  description String?
+  
+  /// The current workflow status of the task.
+  ///
+  /// Allowed values: open (initial state, work not yet started), in-progress
+  /// (work actively underway), completed (deliverable finished), closed
+  /// (formally finalized). Every status change is automatically recorded in
+  /// {@link erp_hrm_task_histories} with timestamp, old status, new status,
+  /// and the user who made the change.
+  status String
+  
+  /// The urgency level of the task.
+  ///
+  /// Allowed values: low, medium (default), high, urgent. Priority serves as
+  /// guidance for employees and managers on which tasks to address first. It
+  /// does not enforce scheduling behavior on its own.
+  priority String
+  
+  /// Optional numeric estimate of the total hours expected to complete this
+  /// task.
+  ///
+  /// Must be a positive number when provided. Used for planning and can be
+  /// compared against actual logged hours in {@link erp_hrm_timelogs}.
+  estimated_hours Float?
+  
+  /// Optional deadline by which the task should be completed.
+  ///
+  /// Used for planning, sorting, and filtering. A task without a due date has
+  /// no fixed deadline.
+  due_date DateTime?
+  
+  /// Timestamp when the task was created.
+  ///
+  /// Automatically set at creation. Used for chronological listing and audit
+  /// purposes.
+  created_at DateTime
+  
+  /// Timestamp of the most recent modification to any task field.
+  ///
+  /// Automatically updated whenever the task's title, description, status,
+  /// priority, estimated hours, due date, assigned employee, or parent task is
+  /// changed.
+  updated_at DateTime
+  
+  /// Timestamp of soft deletion.
+  ///
+  /// When set, the task is considered deleted and is excluded from normal
+  /// queries. Tasks are permanently removed only when their parent project is
+  /// deleted.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  project erp_hrm_projects @relation(fields: [erp_hrm_project_id], references: [id], onDelete: Cascade)
+  assignedEmployee erp_hrm_employees? @relation(fields: [erp_hrm_assigned_employee_id], references: [id], onDelete: Cascade)
+  parentTask erp_hrm_tasks? @relation("recursive", fields: [erp_hrm_parent_task_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  childTasks erp_hrm_tasks[] @relation("recursive")
+  statusHistories erp_hrm_task_histories[]
+  timelogs erp_hrm_timelogs[]
+  timers erp_hrm_timers[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([erp_hrm_parent_task_id])
+  @@index([erp_hrm_project_id, status])
+  @@index([erp_hrm_assigned_employee_id, status])
+  @@index([erp_hrm_project_id, created_at])
+  @@index([erp_hrm_project_id, due_date])
+}
+
+/// Immutable audit trail recording every status transition of a {@link
+/// erp_hrm_tasks Task}.
+///
+/// Each entry captures the old status before the transition, the new status
+/// after, the timestamp of the change, and the {@link erp_hrm_members
+/// member} who performed it. Entries are created automatically whenever a
+/// task's status is updated and cannot be modified or deleted after
+/// creation.
+///
+/// Task status values follow the defined workflow: open, in-progress,
+/// completed, closed. The history provides a complete chronological record
+/// of how each task moved through these states, enabling audit review and
+/// workflow analysis.
+///
+/// @namespace task
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_hrm_task_histories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the {@link erp_hrm_tasks Task} whose status changed.
+  ///
+  /// Establishes the parent-child relationship where each task accumulates
+  /// history entries over its lifetime. Querying history for a task returns
+  /// entries in chronological order by {@link created_at}.
+  erp_hrm_task_id String
+  
+  /// Reference to the {@link erp_hrm_members member} who made the status
+  /// change.
+  ///
+  /// Identifies the authenticated user who triggered the status transition.
+  /// This could be a project lead updating a task in their project, or a user
+  /// with project:manage permission editing any task.
+  changed_by_member_id String
+  
+  /// The task status before the transition.
+  ///
+  /// One of: open, in-progress, completed, closed. Together with {@link
+  /// new_status}, this captures both the origin and destination of the state
+  /// change.
+  old_status String
+  
+  /// The task status after the transition.
+  ///
+  /// One of: open, in-progress, completed, closed. Together with {@link
+  /// old_status}, this captures both the origin and destination of the state
+  /// change.
+  new_status String
+  
+  /// Timestamp recording when the status change occurred.
+  ///
+  /// Serves as both the creation time of the history entry and the
+  /// point-in-time marker for the status transition. Entries are immutable
+  /// once created.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  task erp_hrm_tasks @relation(fields: [erp_hrm_task_id], references: [id], onDelete: Cascade)
+  changedByMember erp_hrm_members @relation(fields: [changed_by_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([changed_by_member_id])
+  @@index([erp_hrm_task_id, created_at])
+}

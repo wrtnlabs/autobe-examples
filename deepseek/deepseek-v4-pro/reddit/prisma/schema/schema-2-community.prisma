@@ -1,0 +1,393 @@
+/// Core community entity representing user-created discussion spaces that
+/// serve as organizational containers for posts.
+///
+/// Communities are the primary grouping mechanism on the platform. Each
+/// community has a unique case-insensitive name for discovery via search and
+/// browsing, an optional description explaining its purpose, and an optional
+/// icon image for visual identification. Communities are created by
+/// authenticated members who become permanent owners with full governance
+/// authority.
+///
+/// Community ownership is immutable — the creating user holds supreme
+/// authority over the community, including the ability to appoint and remove
+/// moderators (see {@link community_hub_community_moderators}), manage
+/// subscriptions (see {@link community_hub_community_subscriptions}), and
+/// issue bans (see {@link community_hub_community_bans}). The owner cannot
+/// be removed from their position by any other user.
+///
+/// The subscriber_count field caches the total number of active
+/// subscriptions to the community for display performance. This count
+/// increments when a user subscribes and decrements when a user
+/// unsubscribes, keeping the community's public subscriber total accurate.
+/// The count is visible to all users, both authenticated and
+/// unauthenticated.
+///
+/// @namespace community
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_hub_communities {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key uniquely identifying each community.
+  id String @id
+  
+  /// Reference to the {@link community_hub_members} who created and owns this
+  /// community.
+  ///
+  /// The owner holds the highest authority over the community and is
+  /// responsible for its management. Ownership is established at the moment of
+  /// community creation and remains with that user permanently. The owner has
+  /// full control over community governance, including the ability to appoint
+  /// and remove moderators.
+  member_id String
+  
+  /// Unique case-insensitive name identifying the community across the
+  /// platform.
+  ///
+  /// Serves as the primary means of community discovery and identification.
+  /// Users search for communities by name, and the name appears in community
+  /// listings, post feeds, and community detail views. Uniqueness is enforced
+  /// at the database level with case-insensitive comparison handled at the
+  /// application layer.
+  name String
+  
+  /// Optional text describing the community's purpose, topic, or rules.
+  ///
+  /// Displayed on the community's detail page to inform potential subscribers
+  /// about what the community is about. May contain markdown or plain text.
+  description String?
+  
+  /// Optional URL to the community's icon image for visual identification.
+  ///
+  /// Displayed alongside the community name in listings, feeds, and the
+  /// community detail page. Stored as a URI reference to the uploaded image
+  /// file.
+  icon_image String?
+  
+  /// Cached count of active subscriptions to this community.
+  ///
+  /// Denormalized for feed display performance — avoids counting subscriptions
+  /// on every community listing query. Increments when a user subscribes via
+  /// {@link community_hub_community_subscriptions} and decrements when a user
+  /// unsubscribes. This count is publicly visible and serves as a measure of
+  /// the community's reach and popularity.
+  subscriber_count Int
+  
+  /// Timestamp when the community was created.
+  created_at DateTime
+  
+  /// Timestamp when the community was last updated, including description or
+  /// icon changes.
+  updated_at DateTime
+  
+  /// Soft-delete timestamp. When set, the community is considered deleted and
+  /// excluded from search results and listings, though existing content
+  /// relationships are preserved.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  owner community_hub_members @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  subscriptions community_hub_community_subscriptions[]
+  moderatorRoles community_hub_community_moderators[]
+  bans community_hub_community_bans[]
+  posts community_hub_posts[]
+  reports community_hub_reports[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([member_id])
+  @@unique([name])
+}
+
+/// Represents a user's membership in a community through subscription. When
+/// a user subscribes to a community, a subscription record is created,
+/// linking the user to the community and enabling post creation within that
+/// community.
+///
+/// A subscription is the prerequisite for creating posts in a community per
+/// {@link community_hub_communities}. Users must be subscribed before they
+/// can contribute content. The subscription also determines which
+/// communities appear in the user's home feed, which aggregates posts
+/// exclusively from subscribed communities.
+///
+/// Subscriptions are managed through subscribe and unsubscribe operations.
+/// Subscribing when already subscribed is treated as a no-op; unsubscribing
+/// when not subscribed is also a no-op. When a user unsubscribes, the
+/// subscription record is permanently removed, but all content the user
+/// previously created in the community is preserved. Community ownership is
+/// unaffected by unsubscription.
+///
+/// Each subscription links exactly one {@link community_hub_members} to
+/// exactly one {@link community_hub_communities}. A user may hold
+/// subscriptions to many communities with no limit, and a community may have
+/// subscriptions from many users.
+///
+/// @namespace community
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_hub_community_subscriptions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the subscribing member.
+  ///
+  /// Identifies the {@link community_hub_members} who created this
+  /// subscription. A member's subscriptions determine their home feed content
+  /// and which communities they can post in.
+  member_id String
+  
+  /// Reference to the community being subscribed to.
+  ///
+  /// Identifies the {@link community_hub_communities} that the member is
+  /// joining. The community's subscriber count is derived from the number of
+  /// active subscription records referencing it.
+  community_id String
+  
+  /// Timestamp when the subscription was created, marking when the member
+  /// joined the community.
+  created_at DateTime
+  
+  /// Timestamp when the subscription record was last modified.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member community_hub_members @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  community community_hub_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([community_id])
+  // spellchecker: ignore-next-line
+  @@unique([member_id, community_id], map: "community_hub_community_subscriptions_member_id_commun_8daa92dc")
+}
+
+/// Community governance roles associating members with communities as either
+/// owner or moderator, forming the two-tier authority hierarchy that powers
+/// all moderation capabilities.
+///
+/// The owner role is automatically assigned to the community creator at
+/// creation time and represents the highest authority — the owner cannot be
+/// removed from the role by any other user, cannot be banned from their own
+/// community, and holds exclusive rights to add and remove moderators. The
+/// moderator role is appointed by the owner or by existing moderators and
+/// grants content moderation privileges scoped to this community, including
+/// the ability to delete posts, delete comments, manage bans, and manage
+/// reports.
+///
+/// Each member may hold at most one role per community, enforced through a
+/// unique constraint. When a member is removed from the role, the record is
+/// deleted entirely and all moderation privileges are immediately revoked.
+/// When a member deletes their account, all moderator records across all
+/// communities are removed. Historical moderation actions performed by a
+/// former moderator are preserved independently of the role record.
+///
+/// See {@link community_hub_communities} for the community being governed
+/// and {@link community_hub_members} for both the member holding the role
+/// and the member who performed the appointment.
+///
+/// @namespace community
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_hub_community_moderators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The community where this moderator role is held.
+  ///
+  /// Each role is scoped to exactly one community. A member holding a role in
+  /// one community does not gain any authority in other communities unless
+  /// separately assigned a role there. When the community is deleted, all
+  /// moderator records are removed.
+  ///
+  /// See {@link community_hub_communities} for the governed community.
+  community_hub_community_id String
+  
+  /// The member who holds this moderator or owner role.
+  ///
+  /// This identifies the user granted governance authority within the
+  /// community. A member may hold a role in multiple communities
+  /// simultaneously, each represented by a separate record.
+  ///
+  /// See {@link community_hub_members} for the role-holding member.
+  community_hub_member_id String
+  
+  /// The member who performed the appointment, adding this user to the
+  /// moderator list.
+  ///
+  /// For owner records this field is null — the owner role is automatically
+  /// assigned by the system when the community is created, not through a user
+  /// action. For moderator records, this identifies the member (owner or
+  /// moderator) who added them.
+  ///
+  /// See {@link community_hub_members} for the appointing member.
+  added_by_community_hub_member_id String?
+  
+  /// The governance role type within the two-tier hierarchy.
+  ///
+  /// Valid values are 'owner' (community creator, highest authority, cannot be
+  /// removed or banned by anyone, has exclusive right to remove moderators)
+  /// and 'moderator' (appointed role with content moderation privileges
+  /// including post deletion, comment deletion, ban management, and report
+  /// management, can add other moderators but cannot remove the owner or other
+  /// moderators).
+  ///
+  /// The role is immutable after creation — to change a member's role, the
+  /// existing record is removed and a new one is created if needed.
+  role String
+  
+  /// The moment when this moderator role was assigned.
+  ///
+  /// For owners, this matches the community creation time. For moderators,
+  /// this is when the appointment was made.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  community community_hub_communities @relation(fields: [community_hub_community_id], references: [id], onDelete: Cascade)
+  member community_hub_members @relation("community_hub_community_moderators_of_community_hub_member_id", fields: [community_hub_member_id], references: [id], onDelete: Cascade)
+  addedByMember community_hub_members? @relation("community_hub_community_moderators_of_added_by_communi_a74ff233", fields: [added_by_community_hub_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([community_hub_member_id])
+  // spellchecker: ignore-next-line
+  @@index([added_by_community_hub_member_id], map: "community_hub_community_moderators_added_by_community__297b2f4e")
+  // spellchecker: ignore-next-line
+  @@unique([community_hub_community_id, community_hub_member_id], map: "community_hub_community_moderators_community_hub_commu_0b436bd9")
+}
+
+/// Records user bans issued by community moderators or the owner,
+/// restricting the banned user from creating posts or comments while
+/// preserving view access to community content.
+///
+/// The ban links a {@link community_hub_members member} (the banned user), a
+/// {@link community_hub_communities community}, and the moderator or owner
+/// who issued the ban. Each ban takes immediate effect: the banned user
+/// cannot create new posts or write comments in the community, but may still
+/// browse and view all content. Existing posts and comments by the banned
+/// user are preserved and remain visible.
+///
+/// An optional reason documents the rationale for the ban and is visible to
+/// other moderators when reviewing the banned users list. Unban is tracked
+/// within the same record via unbanned_at and unbanned_by_id, providing a
+/// complete audit trail of ban-unban cycles. A user may be banned, unbanned,
+/// and banned again from the same community, with each cycle producing a
+/// distinct record.
+///
+/// Ban scope is strictly limited to the community where it was issued. A ban
+/// in one community has no effect on the user's standing or permissions in
+/// any other community.
+///
+/// @namespace community
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_hub_community_bans {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the {@link community_hub_members member} who is banned from
+  /// the community.
+  ///
+  /// Identifies the user subject to the ban's restrictions. While the ban is
+  /// active (unbanned_at is null), this user cannot create posts or write
+  /// comments in the target community.
+  community_hub_member_id String
+  
+  /// Reference to the {@link community_hub_communities community} from which
+  /// the member is banned.
+  ///
+  /// The ban's restrictions apply only within this community. The banned user
+  /// retains full access to all other communities on the platform.
+  community_hub_community_id String
+  
+  /// Reference to the {@link community_hub_members member} (moderator or
+  /// owner) who issued the ban.
+  ///
+  /// Identifies the moderator or community owner who performed the ban action.
+  /// The issuing member must hold a moderator role or ownership in the target
+  /// community at the time the ban is issued.
+  issued_by_id String
+  
+  /// Reference to the {@link community_hub_members member} (moderator or
+  /// owner) who lifted the ban.
+  ///
+  /// Set when a moderator or owner unbans the user. Null while the ban is
+  /// active. Together with unbanned_at, this provides a complete audit trail
+  /// of who reversed the ban and when.
+  unbanned_by_id String?
+  
+  /// Optional explanation for why the ban was issued.
+  ///
+  /// When provided by the moderator, this documents the rationale behind the
+  /// ban and is visible to other moderators of the community when reviewing
+  /// the banned users list. May be null if no reason was given.
+  reason String?
+  
+  /// Timestamp when the ban was lifted.
+  ///
+  /// Null while the ban is active. When set, indicates the ban has been
+  /// resolved and the user's posting and commenting privileges in the
+  /// community are restored. Used together with unbanned_by_id to track the
+  /// unban action.
+  unbanned_at DateTime?
+  
+  /// Timestamp when the ban was issued.
+  ///
+  /// Records the date and time the moderator performed the ban action.
+  /// Displayed in the banned users list visible to community moderators and
+  /// the owner.
+  created_at DateTime
+  
+  /// Timestamp of the most recent modification to this ban record.
+  ///
+  /// Updated when the ban is lifted (unbanned_at and unbanned_by_id are set).
+  updated_at DateTime
+  
+  /// Soft-delete timestamp for the ban record.
+  ///
+  /// Typically null. May be set when the associated community is deleted or
+  /// the ban record is removed for administrative reasons, preserving
+  /// historical data while excluding it from active queries.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  bannedMember community_hub_members @relation("community_hub_community_bans_of_community_hub_member_id", fields: [community_hub_member_id], references: [id], onDelete: Cascade)
+  community community_hub_communities @relation(fields: [community_hub_community_id], references: [id], onDelete: Cascade)
+  issuedBy community_hub_members @relation("community_hub_community_bans_of_issued_by_id", fields: [issued_by_id], references: [id], onDelete: Cascade)
+  unbannedBy community_hub_members? @relation("community_hub_community_bans_of_unbanned_by_id", fields: [unbanned_by_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([issued_by_id])
+  @@index([unbanned_by_id])
+  // spellchecker: ignore-next-line
+  @@index([community_hub_community_id, unbanned_at], map: "community_hub_community_bans_community_hub_community_i_e9e1f5f1")
+  // spellchecker: ignore-next-line
+  @@index([community_hub_member_id, community_hub_community_id], map: "community_hub_community_bans_community_hub_member_id_c_ee333ed7")
+}

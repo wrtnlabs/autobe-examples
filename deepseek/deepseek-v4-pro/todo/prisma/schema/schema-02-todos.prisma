@@ -1,0 +1,188 @@
+/// Individual task items belonging to authenticated members with title,
+/// optional description, optional start and due dates, completion status,
+/// soft-delete lifecycle, and creation timestamp.
+///
+/// Each todo belongs to exactly one {@link todo_app_members member}. Todos
+/// are completely private — members can only access their own todos. Newly
+/// created todos default to incomplete. Members can toggle completion status
+/// freely between incomplete and complete, edit any attribute (each edit
+/// recorded in {@link todo_app_edit_histories}), soft-delete (moving to
+/// trash), restore from trash, or permanently delete.
+///
+/// **Completion Status**: Tracked via the `completed_at` timestamp — NULL
+/// indicates incomplete, a non-NULL value indicates the todo is complete and
+/// records when it was marked complete. Toggling back to incomplete clears
+/// this field.
+///
+/// **Soft-Delete Lifecycle**: The `deleted_at` field drives the trash
+/// workflow. When NULL, the todo is active and appears in the normal todo
+/// list. When set, the todo is in trash — hidden from the active list and
+/// visible only in the dedicated trash view. Restoring clears `deleted_at`;
+/// permanent deletion removes the row entirely along with all associated
+/// {@link todo_app_edit_histories}.
+///
+/// @namespace todo_app
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_todos {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the {@link todo_app_members member} who owns this todo.
+  ///
+  /// Every todo is scoped to exactly one member. The member has full ownership
+  /// — they alone can view, edit, toggle, soft-delete, restore, and
+  /// permanently delete this todo. No cross-member access exists.
+  member_id String
+  
+  /// Short text describing the task. Required — a todo cannot exist without a
+  /// title.
+  title String
+  
+  /// Longer text providing additional detail about the task. Optional — may be
+  /// left empty.
+  description String?
+  
+  /// The date when work on the task is intended to begin. Optional — may be
+  /// left unset.
+  ///
+  /// When both this and `due_date` are set, the service layer enforces that
+  /// `due_date` must not be earlier than `start_date`.
+  start_date DateTime?
+  
+  /// The date by which the task should be completed. Optional — may be left
+  /// unset.
+  ///
+  /// When both this and `start_date` are set, the service layer enforces that
+  /// `due_date` must not be earlier than `start_date`.
+  due_date DateTime?
+  
+  /// Records when the todo was marked complete. NULL means the todo is
+  /// incomplete; a non-NULL timestamp means the todo is complete and captures
+  /// the exact completion time.
+  ///
+  /// Defaults to NULL (incomplete) on creation. Toggling between states sets
+  /// this to the current timestamp (complete) or clears it to NULL
+  /// (incomplete).
+  completed_at DateTime?
+  
+  /// Timestamp when this todo was first created. Set automatically on creation
+  /// and never changes.
+  created_at DateTime
+  
+  /// Timestamp when this todo was last modified. Updated automatically on any
+  /// attribute change including completion toggles and soft-delete/restore
+  /// operations.
+  updated_at DateTime
+  
+  /// Soft-delete timestamp. NULL indicates the todo is active; a non-NULL
+  /// value indicates the todo has been moved to the trash.
+  ///
+  /// Active todos appear in the normal todo list. Trashed todos are hidden
+  /// from the active list and visible only via the trash view. Restoring from
+  /// trash sets this back to NULL.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member todo_app_members @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  editHistories todo_app_edit_histories[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([member_id, deleted_at, created_at])
+  @@index([member_id, deleted_at, start_date])
+  @@index([member_id, deleted_at, due_date])
+  @@index([member_id, deleted_at, completed_at])
+}
+
+/// Immutable audit trail recording field-level snapshots of a {@link
+/// todo_app_todos} after each edit.
+///
+/// Each entry captures the complete state of the todo's editable fields —
+/// title, description, start date, and due date — at the moment the edit was
+/// applied. Entries are append-only: once created, they cannot be modified
+/// or individually deleted. The only removal path is cascade deletion when
+/// the parent todo is permanently deleted from the trash.
+///
+/// Edit histories are presented to the user in reverse chronological order
+/// (most recent first), supported by the composite index on parent todo and
+/// creation timestamp.
+///
+/// @namespace todo_app
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_edit_histories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the parent {@link todo_app_todos} whose edit produced this
+  /// history entry.
+  ///
+  /// Establishes the 1:N relationship where a todo can accumulate many edit
+  /// history entries over its lifetime. Deletion is cascaded: when the parent
+  /// todo is permanently deleted from the trash, all associated edit history
+  /// entries are removed along with it.
+  todo_app_todo_id String
+  
+  /// The title of the todo after the edit was applied.
+  ///
+  /// Always populated because every todo must have a title per business rules.
+  title String
+  
+  /// The description of the todo after the edit was applied.
+  ///
+  /// Nullable because the description field on the parent todo is optional and
+  /// may be left empty.
+  description String?
+  
+  /// The start date of the todo after the edit was applied.
+  ///
+  /// Nullable because the start date field on the parent todo is optional and
+  /// may be left unset.
+  start_date DateTime?
+  
+  /// The due date of the todo after the edit was applied.
+  ///
+  /// Nullable because the due date field on the parent todo is optional and
+  /// may be left unset.
+  due_date DateTime?
+  
+  /// Timestamp when this edit history entry was created, representing the date
+  /// and time the edit occurred.
+  ///
+  /// Set automatically at creation and never changes. Serves as both the
+  /// record's creation timestamp and the edit timestamp visible to the user in
+  /// the history listing.
+  created_at DateTime
+  
+  /// Timestamp of the last update to this record.
+  ///
+  /// Set to the same value as created_at at creation time. Since edit history
+  /// entries are immutable and never modified after creation, this value
+  /// remains unchanged.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  todo todo_app_todos @relation(fields: [todo_app_todo_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([todo_app_todo_id, created_at])
+}

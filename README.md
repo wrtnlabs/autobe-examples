@@ -6,6 +6,7 @@ AI Model | Success | Score | FCSR | Status
 :--------|---------|------:|-----:|:------:
 [`anthropic/claude-sonnet-4.6`](#anthropicclaude-sonnet-46) | 4 | 100 | 82% | 🟢
 [`deepseek/deepseek-v4-flash`](#deepseekdeepseek-v4-flash) | 4 | 100 | 85% | 🟢
+[`deepseek/deepseek-v4-pro`](#deepseekdeepseek-v4-pro) | 4 | 100 | 89% | 🟢
 [`minimax/minimax-m2.7`](#minimaxminimax-m27) | 4 | 100 | 79% | 🟢
 [`openai/gpt-5.4`](#openaigpt-54) | 4 | 100 | 80% | 🟢
 [`openai/gpt-5.4-mini`](#openaigpt-54-mini) | 4 | 100 | 85% | 🟢
@@ -176,6 +177,83 @@ Phase | Generated | Token Usage | Elapsed Time | FCSR
 🟢 Interface | `operations`: 106, `schemas`: 137 | 92.23M | 1h 22m 48s | 75%
 🟢 Realize | `functions`: 167 | 40.21M | 1h 1m 9s | 89%
 🟢 Test | `functions`: 318 | 50.13M | 1h 22m 31s | 88%
+
+
+## `deepseek/deepseek-v4-pro`
+
+Project | Score | Analyze | Prisma | Interface | Test | Realize
+:-------|------:|:-------:|:------:|:----------|:----:|:-------:
+[`todo`](./deepseek/deepseek-v4-pro/todo/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
+[`reddit`](./deepseek/deepseek-v4-pro/reddit/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
+[`shopping`](./deepseek/deepseek-v4-pro/shopping/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
+[`erp`](./deepseek/deepseek-v4-pro/erp/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
+
+### `deepseek/deepseek-v4-pro` - `todo`
+
+- Source Code: [`deepseek/deepseek-v4-pro/todo`](./deepseek/deepseek-v4-pro/todo/)
+- Score: 100
+- Elapsed Time: 3h 4m 22s
+- Token Usage: 21.81M
+- Function Calling Success Rate: 92.49%
+
+Phase | Generated | Token Usage | Elapsed Time | FCSR
+:-----|:----------|------------:|-------------:|------:
+🟢 Analyze | `actors`: 2, `documents`: 6 | 1.08M | 1h 5m 33s | 97%
+🟢 Database | `namespaces`: 2, `models`: 7 | 513.6K | 10m 41s | 93%
+🟢 Interface | `operations`: 27, `schemas`: 37 | 10.95M | 51m 7s | 89%
+🟢 Realize | `functions`: 40 | 4.03M | 31m 42s | 91%
+🟢 Test | `functions`: 79 | 5.23M | 25m 17s | 96%
+
+
+### `deepseek/deepseek-v4-pro` - `reddit`
+
+- Source Code: [`deepseek/deepseek-v4-pro/reddit`](./deepseek/deepseek-v4-pro/reddit/)
+- Score: 100
+- Elapsed Time: 4h 58m 9s
+- Token Usage: 72.42M
+- Function Calling Success Rate: 87.39%
+
+Phase | Generated | Token Usage | Elapsed Time | FCSR
+:-----|:----------|------------:|-------------:|------:
+🟢 Analyze | `actors`: 2, `documents`: 6 | 1.62M | 1h 5m 26s | 97%
+🟢 Database | `namespaces`: 5, `models`: 15 | 1.71M | 21m 57s | 93%
+🟢 Interface | `operations`: 67, `schemas`: 75 | 35.50M | 1h 36m 58s | 79%
+🟢 Realize | `functions`: 102 | 12.93M | 1h 1m 13s | 93%
+🟢 Test | `functions`: 209 | 20.65M | 52m 34s | 93%
+
+
+### `deepseek/deepseek-v4-pro` - `shopping`
+
+- Source Code: [`deepseek/deepseek-v4-pro/shopping`](./deepseek/deepseek-v4-pro/shopping/)
+- Score: 100
+- Elapsed Time: 13h 37m 36s
+- Token Usage: 302.45M
+- Function Calling Success Rate: 90.19%
+
+Phase | Generated | Token Usage | Elapsed Time | FCSR
+:-----|:----------|------------:|-------------:|------:
+🟢 Analyze | `actors`: 4, `documents`: 6 | 6.96M | 6h 3m 17s | 97%
+🟢 Database | `namespaces`: 5, `models`: 39 | 3.80M | 25m 27s | 97%
+🟢 Interface | `operations`: 210, `schemas`: 197 | 135.64M | 2h 44m 58s | 81%
+🟢 Realize | `functions`: 301 | 45.23M | 1h 44m 22s | 94%
+🟢 Test | `functions`: 587 | 110.81M | 2h 39m 29s | 97%
+
+
+### `deepseek/deepseek-v4-pro` - `erp`
+
+- Source Code: [`deepseek/deepseek-v4-pro/erp`](./deepseek/deepseek-v4-pro/erp/)
+- Score: 100
+- Elapsed Time: 13h 1m 57s
+- Token Usage: 140.92M
+- Function Calling Success Rate: 88.07%
+
+Phase | Generated | Token Usage | Elapsed Time | FCSR
+:-----|:----------|------------:|-------------:|------:
+🟢 Analyze | `actors`: 2, `documents`: 6 | 5.53M | 5h 41m 3s | 99%
+🟢 Database | `namespaces`: 8, `models`: 20 | 5.13M | 2h 8m 51s | 82%
+🟢 Interface | `operations`: 98, `schemas`: 127 | 72.46M | 2h 21m 6s | 80%
+🟢 Realize | `functions`: 144 | 26.94M | 1h 29m 0s | 94%
+🟢 Test | `functions`: 292 | 30.85M | 1h 21m 54s | 94%
 
 
 ## `minimax/minimax-m2.7`

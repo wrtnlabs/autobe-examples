@@ -1,0 +1,358 @@
+/// User-created posts published within communities, serving as the central
+/// unit of content on the platform.
+///
+/// Each post belongs to exactly one {@link community_hub_communities} and is
+/// authored by exactly one {@link community_hub_members Member}. Both
+/// relationships are immutable — established at creation and never changed.
+/// Posts support three mutually exclusive content types determined by the
+/// type field: text posts use the body field for written content, link posts
+/// use the url field for external references, and image posts associate with
+/// a {@link community_hub_post_images} record for uploaded images. The type
+/// is set at creation and cannot be modified afterward.
+///
+/// The title is the only required content field and serves as the post's
+/// primary label across all views. The denormalized vote_score and
+/// comment_count fields enable efficient feed display without expensive
+/// aggregate queries on every page load. Soft deletion is supported via the
+/// deleted_at timestamp, preserving data integrity while hiding removed
+/// content from public views.
+///
+/// @namespace content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_hub_posts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The {@link community_hub_members Member} who authored and published this
+  /// post.
+  ///
+  /// The author relationship is immutable — it is established when the post is
+  /// created and cannot be transferred or changed. The author retains ongoing
+  /// control over their post, including the ability to edit or delete it. The
+  /// author's username appears publicly alongside the post in all feeds and on
+  /// the post detail page.
+  community_hub_member_id String
+  
+  /// The {@link community_hub_communities} where this post resides.
+  ///
+  /// The community relationship is immutable — established at creation and
+  /// never changed. The community determines where the post appears: in the
+  /// community's own feed, in the home feeds of subscribed members, and in the
+  /// popular feed when the post gains traction. The community name is
+  /// displayed alongside the post in all feed views.
+  community_hub_community_id String
+  
+  /// The content type of this post, determining which type-specific field
+  /// holds the primary content.
+  ///
+  /// Must be exactly one of three values: "text" for written body content,
+  /// "link" for an external URL reference, or "image" for an uploaded image.
+  /// The type is set at creation time and cannot be changed afterward. A post
+  /// cannot be more than one type at once.
+  type String
+  
+  /// The required title of the post, serving as the primary label that
+  /// summarizes its content.
+  ///
+  /// The title is the minimal identifying element without which a post cannot
+  /// exist. It is visible in all feed views, on the post detail page, and in
+  /// search results.
+  title String
+  
+  /// The written body content for text-type posts.
+  ///
+  /// Contains free-form text that conveys the author's message, story,
+  /// question, or discussion prompt. Only meaningful when type is "text"; null
+  /// for link and image posts. In post list views, the first portion of the
+  /// body text is shown as a preview.
+  body String?
+  
+  /// The external URL for link-type posts.
+  ///
+  /// Points to content elsewhere on the web and serves as the post's primary
+  /// payload. Only meaningful when type is "link"; null for text and image
+  /// posts. In post list views, the domain name extracted from the URL is
+  /// displayed so readers know where the link leads before clicking.
+  url String?
+  
+  /// The denormalized net vote score reflecting aggregate community sentiment
+  /// on this post.
+  ///
+  /// Each upvote adds one and each downvote subtracts one. The score can be
+  /// positive, zero, or negative. This field is kept in sync with {@link
+  /// community_hub_votes} and directly affects the post's visibility in sorted
+  /// feeds — particularly in hot, top, and controversial rankings.
+  vote_score Int
+  
+  /// The denormalized running tally of how many {@link community_hub_comments}
+  /// have been written on this post, including all nested replies at any
+  /// depth.
+  ///
+  /// Provides an immediate sense of how much discussion the post has generated
+  /// when displayed in feeds and on the post detail page.
+  comment_count Int
+  
+  /// Timestamp when the post was originally published.
+  ///
+  /// Serves as the basis for showing relative timestamps (e.g., "3 hours ago")
+  /// in all post displays and is the primary sort key for the "new" feed
+  /// ordering.
+  created_at DateTime
+  
+  /// Timestamp of the most recent edit to this post.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp.
+  ///
+  /// When set, the post is considered deleted and hidden from public views,
+  /// but the record is preserved for data integrity and moderation audit
+  /// purposes. Null means the post is active and visible.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member community_hub_members @relation(fields: [community_hub_member_id], references: [id], onDelete: Cascade)
+  community community_hub_communities @relation(fields: [community_hub_community_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  image community_hub_post_images?
+  comments community_hub_comments[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([community_hub_community_id, created_at])
+  @@index([community_hub_community_id, vote_score])
+  @@index([community_hub_member_id, created_at])
+  @@index([created_at])
+  @@index([vote_score])
+}
+
+/// Image file metadata for image-type posts.
+///
+/// Stores the storage paths, dimensions, file size, and MIME type for images
+/// attached to {@link community_hub_posts} of the image type. Each image
+/// post has exactly one image record, enforced by a unique foreign key
+/// constraint on the post reference.
+///
+/// This table is separated from posts to isolate file storage concerns —
+/// enabling independent image lifecycle management, storage capacity
+/// planning, and cleanup operations without coupling to the post's content
+/// fields.
+///
+/// @namespace content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_hub_post_images {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the parent post this image belongs to.
+  ///
+  /// Establishes a 1:1 relationship with {@link community_hub_posts} — only
+  /// image-type posts have an associated image record, and each such post has
+  /// exactly one.
+  community_hub_post_id String
+  
+  /// File system path or storage key to the originally uploaded image file.
+  ///
+  /// Used to retrieve the full-resolution image for detail views and downloads.
+  original_path String
+  
+  /// File system path or storage key to the generated thumbnail version of the
+  /// image.
+  ///
+  /// Used for feed list displays and previews where full-resolution images are
+  /// unnecessary, reducing bandwidth and improving load times.
+  thumbnail_path String
+  
+  /// Size of the original uploaded image file in bytes.
+  ///
+  /// Used for storage capacity tracking, quota enforcement, and bandwidth
+  /// estimation.
+  byte_size Int
+  
+  /// Pixel width of the original uploaded image.
+  ///
+  /// Used by clients for responsive rendering and layout calculations without
+  /// needing to load the full image first.
+  width Int
+  
+  /// Pixel height of the original uploaded image.
+  ///
+  /// Used alongside width for aspect ratio calculations and responsive
+  /// rendering.
+  height Int
+  
+  /// MIME type of the uploaded image file, e.g. "image/jpeg", "image/png",
+  /// "image/webp".
+  ///
+  /// Determines how the image is served to clients and which codecs the
+  /// browser should use for decoding.
+  mime_type String
+  
+  /// Timestamp when the image record was created.
+  ///
+  /// Set automatically when the image is first uploaded and the metadata
+  /// record is persisted.
+  created_at DateTime
+  
+  /// Timestamp when the image record was last updated.
+  ///
+  /// Reflects the most recent modification to any metadata field, such as
+  /// thumbnail regeneration or image replacement.
+  updated_at DateTime
+  
+  /// Timestamp when the image was soft-deleted.
+  ///
+  /// Set when the parent post is deleted or the image is replaced. Null for
+  /// active images. Enables recovery workflows and deferred cleanup of stored
+  /// files.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  post community_hub_posts @relation(fields: [community_hub_post_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([community_hub_post_id])
+}
+
+/// Comments and nested replies on posts forming an unlimited-depth
+/// conversation tree.
+///
+/// Each comment belongs to exactly one {@link community_hub_posts post} and
+/// is authored by a single {@link community_hub_members member}. Top-level
+/// comments initiate a discussion thread on a post, while replies continue
+/// an existing thread through a self-referential parent relationship with no
+/// depth limit.
+///
+/// The cached `depth` field tracks nesting level for efficient tree
+/// rendering: zero for top-level comments, incrementing by one at each reply
+/// level. The denormalized `vote_score` reflects the community's evaluation
+/// through upvotes and downvotes managed by {@link community_hub_votes}. The
+/// score can be negative when downvotes exceed upvotes, and updates as votes
+/// are cast, changed, or removed.
+///
+/// Soft deletion via `deleted_at` preserves conversation structure: when a
+/// parent comment is soft-deleted, child replies persist as orphaned threads
+/// under the post by having their `community_hub_parent_comment_id` set to
+/// null. When a post is hard-deleted, all associated comments are
+/// permanently removed by cascade. When a member account is permanently
+/// deleted, all comments authored by that member are removed by cascade.
+///
+/// @namespace content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_hub_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The post this comment belongs to.
+  ///
+  /// Every comment is published within a single {@link community_hub_posts
+  /// post} and cannot be moved to another post. When the post is permanently
+  /// deleted, all its comments are removed by cascade delete.
+  community_hub_post_id String
+  
+  /// The member who authored this comment.
+  ///
+  /// References the {@link community_hub_members member} who wrote the
+  /// comment. When a member account is permanently deleted, all comments
+  /// authored by that member are removed by cascade delete.
+  community_hub_member_id String
+  
+  /// The parent comment this comment replies to, forming the conversation tree.
+  ///
+  /// Null for top-level comments that start a new thread directly on the post.
+  /// Non-null for replies that continue an existing thread, referencing
+  /// another {@link community_hub_comments comment} as the parent. When the
+  /// parent comment is soft-deleted, this reference is set to null so the
+  /// reply persists as an orphaned thread under the post.
+  community_hub_parent_comment_id String?
+  
+  /// The body text of the comment conveying the author's thoughts.
+  ///
+  /// This is the core substance of the comment — the full written response
+  /// from the author, whether directed at the post or another comment.
+  /// Required for every comment; a comment cannot exist without content.
+  content String
+  
+  /// Cached nesting depth of this comment within the conversation tree.
+  ///
+  /// Zero for top-level comments that start a new thread on the post. Each
+  /// level of reply increments the depth by one. Stored as a denormalized
+  /// cache for efficient tree rendering and depth-limited queries without
+  /// recursive traversal.
+  depth Int
+  
+  /// Denormalized vote score reflecting the community's evaluation of this
+  /// comment.
+  ///
+  /// Calculated as total upvotes minus total downvotes, managed by the {@link
+  /// community_hub_votes engagement system}. Can be negative when downvotes
+  /// exceed upvotes. Updated when votes are cast, changed, or removed on this
+  /// comment. Also affects the author's karma score in {@link
+  /// community_hub_members}.
+  vote_score Int
+  
+  /// Timestamp when the comment was posted.
+  ///
+  /// Set automatically on creation and immutable thereafter. Used for
+  /// chronological sorting (New) and displaying comment recency in
+  /// conversation threads.
+  created_at DateTime
+  
+  /// Timestamp of the most recent modification to this comment.
+  ///
+  /// Updated automatically whenever the comment's content is edited by its
+  /// author.
+  updated_at DateTime
+  
+  /// Soft-delete timestamp indicating when the comment was removed by its
+  /// author or a moderator.
+  ///
+  /// When set, the comment is considered deleted and its content should be
+  /// hidden from display, though the record persists to maintain conversation
+  /// tree structure for orphaned replies. Null while the comment is active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  post community_hub_posts @relation(fields: [community_hub_post_id], references: [id], onDelete: Cascade)
+  author community_hub_members @relation(fields: [community_hub_member_id], references: [id], onDelete: Cascade)
+  parentComment community_hub_comments? @relation("recursive", fields: [community_hub_parent_comment_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  childComments community_hub_comments[] @relation("recursive")
+  
+  //----
+  // INDEXES
+  //----
+  @@index([community_hub_post_id, created_at])
+  @@index([community_hub_post_id, vote_score])
+  // spellchecker: ignore-next-line
+  @@index([community_hub_parent_comment_id, created_at], map: "community_hub_comments_community_hub_parent_comment_id_1014229f")
+  @@index([community_hub_member_id, created_at])
+}

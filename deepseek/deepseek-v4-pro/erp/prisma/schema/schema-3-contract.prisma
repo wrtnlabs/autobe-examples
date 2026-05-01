@@ -1,0 +1,106 @@
+/// Employee employment contracts defining compensation terms including pay
+/// rate, pay period, and working hours commitment.
+///
+/// Each employee can have multiple contracts over their tenure, creating a
+/// complete historical record of all compensation arrangements. However,
+/// only one contract is active at any given moment — the active contract is
+/// determined at query time as the one with the most recent start_date on or
+/// before the current date whose end_date is either absent (ongoing) or not
+/// yet passed. When a new contract is created for an employee, it
+/// automatically supersedes the previously active contract by virtue of its
+/// later start_date.
+///
+/// Past contracts — those superseded by a newer contract or whose end_date
+/// has passed — are immutable historical records. Only the current active
+/// contract may be edited. This immutability preserves the integrity of the
+/// employee's compensation history for auditing, compliance, and reference
+/// purposes.
+///
+/// @namespace contract
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_hrm_contracts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The {@link erp_hrm_employees Employee} to whom this contract belongs.
+  ///
+  /// Each employee may have multiple contracts over time forming a historical
+  /// record, but only one contract is active at any given moment based on
+  /// start_date recency and end_date validity.
+  erp_hrm_employee_id String
+  
+  /// The date when this contract's compensation terms take effect.
+  ///
+  /// Serves as the anchor point for determining which contract is active — the
+  /// active contract is the one with the most recent start_date on or before
+  /// the current date.
+  start_date DateTime
+  
+  /// The date when this contract's compensation terms expire.
+  ///
+  /// When absent (null), the contract is ongoing with no predetermined
+  /// termination date and remains in effect until superseded by a newer
+  /// contract or the employee leaves the organization. When present, the
+  /// contract is effective from start_date through end_date inclusive.
+  end_date DateTime?
+  
+  /// The numeric amount the employee earns per unit of time as defined by the
+  /// pay_period.
+  ///
+  /// For example, 25.50 with an hourly pay_period means the employee earns
+  /// 25.50 currency units per hour worked.
+  pay_rate Float
+  
+  /// The unit of time against which the pay_rate is measured.
+  ///
+  /// Supported values:
+  /// - hourly: pay_rate applies per hour worked
+  /// - daily: pay_rate applies per full workday
+  /// - weekly: pay_rate applies per full workweek
+  /// - monthly: pay_rate applies per calendar month
+  pay_period String
+  
+  /// The employee's expected weekly time commitment under this contract.
+  ///
+  /// For example, 40 for a standard full-time arrangement, or 37.5 for a
+  /// slightly reduced schedule. This value informs budget calculations and
+  /// capacity planning across the organization.
+  working_hours_per_week Float
+  
+  /// Optional free-form notes recording additional details about the
+  /// compensation agreement.
+  ///
+  /// May include information such as bonus structures, overtime policies, or
+  /// special terms that fall outside the structured fields.
+  notes String?
+  
+  /// Timestamp when this contract record was created in the system.
+  created_at DateTime
+  
+  /// Timestamp when this contract record was last modified.
+  ///
+  /// Past contracts (those superseded or expired) become immutable and this
+  /// timestamp will not change after the contract ceases to be active.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for contracts that were created in error and
+  /// removed before being superseded.
+  ///
+  /// Contracts that have been superseded by a newer contract are preserved as
+  /// historical records rather than deleted.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  employee erp_hrm_employees @relation(fields: [erp_hrm_employee_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([erp_hrm_employee_id, start_date])
+}

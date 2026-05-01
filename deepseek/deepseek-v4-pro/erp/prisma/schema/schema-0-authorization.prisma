@@ -1,0 +1,471 @@
+/// Temporary guest identifiers for anonymous visitors with no
+/// system-recognized identity.
+///
+/// Represents the guest actor — an unauthenticated visitor who has not
+/// provided credentials. Guests possess no distinguishing characteristics
+/// beyond the identifier itself and carry no privileges. The guest record
+/// exists only transiently to anchor {@link erp_hrm_guest_sessions} for the
+/// public authentication surface (sign-up and login only).
+///
+/// Guests transition to {@link erp_hrm_members} through either login with an
+/// existing account or sign-up with a new account. Upon transition, the
+/// guest identity is superseded by the member identity. Guest identifiers
+/// may be cleaned up after session expiration without authentication.
+///
+/// @namespace authorization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_hrm_guests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Timestamp when the guest identifier was created.
+  ///
+  /// Marks the moment an anonymous visitor first contacted the system before
+  /// any authentication attempt.
+  created_at DateTime
+  
+  /// Timestamp when the guest identifier was last updated.
+  ///
+  /// Reflects the most recent interaction by the anonymous visitor.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for guest cleanup.
+  ///
+  /// Allows the system to mark guest identifiers for removal when they are no
+  /// longer needed, such as after successful transition to {@link
+  /// erp_hrm_members} or after session expiration without authentication.
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  sessions erp_hrm_guest_sessions[]
+}
+
+/// Ephemeral session tokens for guest access to the public authentication
+/// surface, covering sign-up and login only.
+///
+/// Each session belongs to a {@link erp_hrm_guests} record and captures the
+/// connection context — IP address, page URL, and referrer — at the time the
+/// session was established. Sessions are append-only; once created, they are
+/// not mutated.
+///
+/// Sessions carry a mandatory expiration timestamp for security. Expired
+/// sessions are not valid for authentication and should be purged
+/// periodically. A guest may hold multiple concurrent sessions across
+/// different devices or browsing contexts.
+///
+/// @namespace authorization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_hrm_guest_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the anonymous guest identity that owns this session.
+  ///
+  /// Links to {@link erp_hrm_guests}, establishing the guest context for
+  /// authentication surface access. Each guest may have multiple concurrent
+  /// sessions.
+  erp_hrm_guest_id String
+  
+  /// IP address from which the guest session was initiated.
+  ///
+  /// Captured at session creation for audit and security purposes.
+  ip String
+  
+  /// Full URL of the page the guest was visiting when the session was created.
+  ///
+  /// Provides context for the authentication flow entry point.
+  href String
+  
+  /// HTTP Referrer header value captured at session creation.
+  ///
+  /// Indicates the page or external source that directed the guest to the
+  /// authentication surface.
+  referrer String
+  
+  /// Timestamp when the session was created.
+  ///
+  /// Records the moment the anonymous guest began interacting with the public
+  /// authentication surface.
+  created_at DateTime
+  
+  /// Timestamp when the session expires and becomes invalid.
+  ///
+  /// NOT NULL by default for security — every guest session has an explicit
+  /// expiration boundary. Expired sessions must not be honored for any
+  /// authenticated operation.
+  expired_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  guest erp_hrm_guests @relation(fields: [erp_hrm_guest_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([erp_hrm_guest_id, created_at])
+}
+
+/// Registered user accounts with email and password authentication, serving
+/// as the identity foundation for all platform access. Members carry a
+/// global profile shared across all organizations they belong to.
+///
+/// Each member authenticates via email and password during the sign-up or
+/// login flow described in {@link erp_hrm_guests}. Upon successful
+/// authentication, a member session is created ({@link
+/// erp_hrm_member_sessions}) that tracks the currently selected organization
+/// context. The global profile — display name, avatar image, and phone
+/// number — is visible across all organizations the member belongs to,
+/// ensuring a consistent identity regardless of which organization context
+/// is active.
+///
+/// Membership in organizations is indirect: a member belongs to
+/// organizations through {@link erp_hrm_employees} records, each of which
+/// links the member to a specific organization with a role assignment. This
+/// allows a single member to hold different roles across multiple
+/// organizations while maintaining a single set of authentication
+/// credentials and profile information.
+///
+/// Account deletion is handled via soft delete through the deleted_at
+/// timestamp. When a member deletes their account, their employee records in
+/// other organizations are deactivated and the member can no longer
+/// authenticate.
+///
+/// @namespace authorization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_hrm_members {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key uniquely identifying the member account across all
+  /// organizations.
+  id String @id
+  
+  /// The member's email address used for authentication and as the primary
+  /// contact identifier.
+  ///
+  /// Must be unique across all member accounts. Used during login for
+  /// credential matching and during sign-up to check for existing accounts.
+  /// Also serves as the target for organization invitations — when an
+  /// invitation is sent to an email matching an existing member, the member is
+  /// automatically added to the inviting organization.
+  email String
+  
+  /// Hashed representation of the member's password for credential
+  /// verification during authentication.
+  ///
+  /// Never stored or transmitted in plaintext. Used exclusively during the
+  /// login flow to validate the member's identity. Password changes are
+  /// handled through the {@link erp_hrm_member_password_resets} flow.
+  password_hash String
+  
+  /// The member's visible name shown across the platform in all organizations
+  /// they belong to.
+  ///
+  /// Part of the global profile that is shared across all organizations.
+  /// Displayed in employee lists, project member views, task assignments,
+  /// activity logs, and all other contexts where the member's identity is
+  /// shown.
+  display_name String
+  
+  /// Optional URI pointing to the member's avatar image for visual
+  /// identification.
+  ///
+  /// Part of the global profile. When set, this image is displayed alongside
+  /// the member's name throughout the platform. When null, a default
+  /// placeholder is used.
+  avatar_image String?
+  
+  /// Optional contact phone number for the member.
+  ///
+  /// Part of the global profile. Stored as a free-text string to accommodate
+  /// international number formats.
+  phone_number String?
+  
+  /// Timestamp when the member account was created through the sign-up flow.
+  created_at DateTime
+  
+  /// Timestamp of the most recent modification to the member's account or
+  /// profile.
+  updated_at DateTime
+  
+  /// Timestamp marking when the member requested account deletion (soft
+  /// delete).
+  ///
+  /// When set, the account is considered deleted: authentication is denied,
+  /// and the member's employee records in other organizations are deactivated.
+  /// The timestamp preserves the deletion record for audit and potential
+  /// recovery within the retention window.
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  sessions erp_hrm_member_sessions[]
+  passwordResets erp_hrm_member_password_resets[]
+  emailVerifications erp_hrm_member_email_verifications[]
+  employees erp_hrm_employees[]
+  taskStatusChanges erp_hrm_task_histories[]
+  reviewedTimesheets erp_hrm_timesheets[]
+  activityLogs erp_hrm_activity_logs[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([email])
+}
+
+/// JWT access and refresh token pairs for member authentication, tracking
+/// the currently selected organization context per session.
+///
+/// Each session represents a single authenticated login by a member. When a
+/// member logs in, the system issues a JWT access token and a refresh token,
+/// stores them in this table, and records the member's selected organization
+/// context. The access token is validated on every authenticated API request
+/// to identify the calling member and their active organization scope.
+///
+/// Members can switch organizations without logging out — the organization
+/// context is updated in-place. Sessions expire based on the `expired_at`
+/// timestamp, after which the tokens become invalid and the member must
+/// re-authenticate.
+///
+/// @namespace authorization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_hrm_member_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key uniquely identifying this member session record.
+  id String @id
+  
+  /// Reference to the authenticated member who owns this session.
+  ///
+  /// Every session belongs to exactly one member. A member may have multiple
+  /// active sessions across different devices or browsers.
+  erp_hrm_member_id String
+  
+  /// Reference to the organization currently selected as this session's active
+  /// context.
+  ///
+  /// All API requests within this session are scoped to this organization for
+  /// data isolation. Members can switch their organization context
+  /// mid-session, which updates this field. Nullable to accommodate edge cases
+  /// where a member loses membership in the selected organization before
+  /// switching context.
+  erp_hrm_organization_id String?
+  
+  /// JWT access token issued at session creation, used as a Bearer token for
+  /// authenticating API requests.
+  ///
+  /// This token is short-lived and validated on every authenticated request.
+  /// It carries the member's identity and organization context as claims.
+  access_token String
+  
+  /// JWT refresh token used to obtain a new access token when the current one
+  /// expires, without requiring the member to log in again.
+  ///
+  /// This token has a longer lifespan than the access token and is rotated
+  /// during the refresh flow.
+  refresh_token String
+  
+  /// IP address of the client that initiated this session, captured at login
+  /// time for security auditing.
+  ip String
+  
+  /// The full URL of the page from which the member initiated the login,
+  /// captured for audit and redirect purposes.
+  href String
+  
+  /// The HTTP Referer header value captured at login time, indicating the page
+  /// that referred the member to the login flow.
+  referrer String
+  
+  /// Timestamp when this session was created — the moment the member
+  /// successfully authenticated.
+  created_at DateTime
+  
+  /// Timestamp when this session expires and its tokens become invalid.
+  ///
+  /// After this point, the member must re-authenticate to obtain a new
+  /// session. This field is NOT NULL by default to enforce mandatory session
+  /// expiration for security.
+  expired_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member erp_hrm_members @relation(fields: [erp_hrm_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([access_token])
+  @@index([erp_hrm_member_id, created_at])
+}
+
+/// Password reset tokens with expiration for the password change and
+/// recovery flow.
+///
+/// Each token is uniquely generated when a {@link erp_hrm_members} requests
+/// a password reset. The system sends the token to the member's email
+/// address, and the member must present the token to verify their identity
+/// before changing their password.
+///
+/// Tokens are time-limited and expire at the moment specified in expired_at.
+/// Expired tokens cannot be used for authentication. Once a password is
+/// successfully reset using a token, the token should be deleted to prevent
+/// reuse.
+///
+/// @namespace authorization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_hrm_member_password_resets {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the {@link erp_hrm_members} who requested this password
+  /// reset token.
+  ///
+  /// Establishes ownership of the reset token. When the member completes the
+  /// password reset flow, the token is consumed and deleted.
+  erp_hrm_member_id String
+  
+  /// Timestamp when this password reset token was generated and sent to the
+  /// member.
+  created_at DateTime
+  
+  /// The exact date and time after which this token becomes invalid and can no
+  /// longer be used for password reset.
+  ///
+  /// Expired tokens are rejected during the password reset flow. This time
+  /// limit prevents indefinite use of a compromised token.
+  expired_at DateTime
+  
+  /// Cryptographically secure unique token string sent to the member's email
+  /// for password reset verification.
+  ///
+  /// Must be globally unique across all active tokens. Presented by the member
+  /// to prove they have access to the registered email address before the
+  /// system allows password change.
+  token String
+  
+  /// Timestamp when this password reset token record was last modified.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member erp_hrm_members @relation(fields: [erp_hrm_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([erp_hrm_member_id])
+  @@unique([token])
+}
+
+/// Email verification tokens for confirming email ownership during sign-up,
+/// enabling invitation matching for automatic organization enrollment.
+///
+/// When a guest completes the sign-up process, the system creates a {@link
+/// erp_hrm_members} account and generates an email verification token stored
+/// in this table. The token is delivered to the user's email address. Upon
+/// successful verification, the system confirms email ownership and
+/// automatically matches any pending {@link erp_hrm_invitations} associated
+/// with the verified email address, enrolling the user into the inviting
+/// organizations.
+///
+/// Each token has a limited lifespan defined by expires_at. Unverified
+/// tokens that exceed their expiration are invalid and cannot be used. The
+/// verified_at timestamp records when the user successfully confirmed their
+/// email, providing an audit trail of the verification event. Once verified,
+/// the token is consumed and cannot be reused.
+///
+/// @namespace authorization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_hrm_member_email_verifications {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the {@link erp_hrm_members} account whose email is pending
+  /// verification.
+  ///
+  /// Each email verification token belongs to exactly one member account. The
+  /// member account is created during sign-up before the verification token is
+  /// generated. A member may have multiple verification tokens over time if
+  /// they re-initiate the verification process or if previous tokens expire.
+  erp_hrm_member_id String
+  
+  /// Cryptographically secure unique token string delivered to the user's
+  /// email address for one-time verification use.
+  ///
+  /// The token serves as a single-use credential embedded in the verification
+  /// link. It must be globally unique across all verification records to
+  /// prevent collisions and ensure secure lookup.
+  token String
+  
+  /// The email address being verified by this token.
+  ///
+  /// Stored redundantly with the member record to preserve the exact email
+  /// targeted by this verification attempt. This provides an immutable audit
+  /// trail — the email recorded here remains unchanged even if the member's
+  /// primary email is later modified.
+  email String
+  
+  /// Timestamp after which this verification token becomes invalid and can no
+  /// longer be used.
+  ///
+  /// Expired tokens are rejected during verification attempts. The expiration
+  /// duration is determined by system security policy to limit the window for
+  /// token misuse.
+  expires_at DateTime
+  
+  /// Timestamp recording when the user successfully verified their email
+  /// address using this token.
+  ///
+  /// Null while the token remains unused and unexpired. Once populated, the
+  /// token is considered consumed and cannot be reused. The verification event
+  /// triggers automatic matching of any pending {@link erp_hrm_invitations}
+  /// targeting the verified email address for automatic organization
+  /// enrollment.
+  verified_at DateTime?
+  
+  /// Timestamp when this verification token was generated and sent to the
+  /// user's email address.
+  created_at DateTime
+  
+  /// Timestamp of the most recent modification to this record. Typically
+  /// updated when verified_at is populated upon successful verification.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member erp_hrm_members @relation(fields: [erp_hrm_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([token])
+  // spellchecker: ignore-next-line
+  @@index([erp_hrm_member_id, created_at], map: "erp_hrm_member_email_verifications_erp_hrm_member_id_c_642cbc93")
+}

@@ -1,0 +1,1069 @@
+/// Customer orders capturing the complete transaction at the moment of
+/// checkout.
+///
+/// The order is the root entity of the purchase lifecycle. It is created
+/// when a customer completes checkout, freezing the shipping address and
+/// total price as historical facts that never change regardless of later
+/// modifications to the customer's saved addresses or product prices. Each
+/// order belongs to exactly one {@link shopping_mall_customers} and can
+/// contain multiple {@link shopping_mall_order_items} spanning different
+/// sellers.
+///
+/// **Shipping Address**: The recipient name, phone number, and full shipping
+/// destination are denormalized into the order at creation. This ensures the
+/// delivery destination is immutable — even if the customer later updates or
+/// deletes their saved {@link shopping_mall_auth addresses}, the order
+/// retains exactly where it was shipped.
+///
+/// **Status Derivation**: The order status is derived from the statuses of
+/// its constituent order items. When all items are paid, the order is
+/// "paid"; when any item ships, it becomes "shipped"; when all items are
+/// delivered, it becomes "delivered"; when all items are cancelled,
+/// "cancelled"; when all items are refunded, "refunded"; and when items are
+/// in mixed states, "partially_completed". The status is updated whenever
+/// any item's status changes.
+///
+/// **Permanence**: Orders are permanent records preserved even after
+/// customer account deletion — the order history remains intact for seller
+/// and administrator reference. Only the customer link may be anonymized if
+/// the account is removed.
+///
+/// @namespace shopping_mall_order
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_orders {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The customer who placed this order.
+  ///
+  /// References {@link shopping_mall_customers}. Every order is placed by
+  /// exactly one registered customer. The order persists even if the customer
+  /// account is later deleted — in such cases, the customer reference may be
+  /// anonymized while the order record itself remains.
+  shopping_mall_customer_id String
+  
+  /// Human-readable order number for customer and administrator reference.
+  ///
+  /// Displayed in order history, confirmation pages, and communications.
+  /// Unique across all orders.
+  code String
+  
+  /// Name of the person receiving the shipment.
+  ///
+  /// Frozen at order creation from the selected shipping address. Immutable
+  /// after the order is placed.
+  recipient_name String
+  
+  /// Contact phone number of the recipient for delivery coordination.
+  ///
+  /// Frozen at order creation from the selected shipping address. Immutable
+  /// after the order is placed.
+  phone_number String
+  
+  /// Street address line for the shipping destination.
+  ///
+  /// Frozen at order creation from the selected shipping address. Immutable
+  /// after the order is placed.
+  street_address String
+  
+  /// City of the shipping destination.
+  ///
+  /// Frozen at order creation from the selected shipping address. Immutable
+  /// after the order is placed.
+  city String
+  
+  /// State or province of the shipping destination.
+  ///
+  /// Frozen at order creation from the selected shipping address. Immutable
+  /// after the order is placed.
+  state_province String
+  
+  /// Postal or ZIP code of the shipping destination.
+  ///
+  /// Frozen at order creation from the selected shipping address. Immutable
+  /// after the order is placed.
+  postal_code String
+  
+  /// Country of the shipping destination.
+  ///
+  /// Frozen at order creation from the selected shipping address. Immutable
+  /// after the order is placed.
+  country String
+  
+  /// Total transaction amount for the entire order at the time of purchase.
+  ///
+  /// Calculated as the sum of all order item prices multiplied by their
+  /// quantities at checkout. Frozen at order creation and never recalculated —
+  /// preserves the actual amount the customer paid regardless of later price
+  /// changes.
+  total_price Float
+  
+  /// Overall order status derived from the statuses of its constituent {@link
+  /// shopping_mall_order_items}.
+  ///
+  /// Possible values:
+  /// - "paid": all order items have status "paid"
+  /// - "shipped": at least one item is "shipped" and none have progressed to
+  /// "delivered"
+  /// - "delivered": all order items have status "delivered"
+  /// - "cancelled": all order items have status "cancelled"
+  /// - "refunded": all order items have status "refunded"
+  /// - "partially_completed": items are in mixed states (e.g., some delivered,
+  /// some cancelled)
+  ///
+  /// Updated automatically whenever any order item's status changes.
+  status String
+  
+  /// Timestamp when the order was placed (checkout completion time).
+  created_at DateTime
+  
+  /// Timestamp of the most recent modification to this order record, including
+  /// status changes triggered by item state transitions.
+  updated_at DateTime
+  
+  /// Soft-delete timestamp. Orders are permanent records and are not normally
+  /// deleted — this field exists for administrative edge cases and data
+  /// retention policies.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  orderItems shopping_mall_order_items[]
+  shipments shopping_mall_shipments[]
+  reviews shopping_mall_review_reviews[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([code])
+  @@index([shopping_mall_customer_id, created_at])
+  @@index([status])
+}
+
+/// Per-variant line items within a customer order, recording purchased
+/// quantity and price at the moment of purchase with independent status
+/// lifecycle.
+///
+/// Each {@link shopping_mall_order_items order item} represents a specific
+/// {@link shopping_mall_product_variants product variant} purchased within
+/// an {@link shopping_mall_orders order}. The price is frozen at purchase
+/// time, preserving historical accuracy regardless of later product or
+/// variant price changes. Order items support multi-seller orders where each
+/// seller manages only their own items through independent status
+/// transitions.
+///
+/// **Status Lifecycle**
+///
+/// The status field tracks the item's progression through five states. Items
+/// start as `paid` upon successful order placement. When a {@link
+/// shopping_mall_shipments shipment} is created by the seller, all included
+/// items transition to `shipped`. Upon delivery confirmation by the customer
+/// — or automatically after 14 days — items become `delivered`. A `paid`
+/// item can be cancelled through a {@link
+/// shopping_mall_cancellation_requests cancellation request}; if approved by
+/// the seller, the status becomes `cancelled`. A `delivered` item can be
+/// refunded through a {@link shopping_mall_refund_requests refund request}
+/// (within 7 days of delivery); if approved, the status becomes `refunded`.
+///
+/// **Price Preservation**
+///
+/// The price field captures the variant's unit price at the time of order
+/// creation. This value is immutable and serves as the authoritative record
+/// for what the customer paid, even if the seller later adjusts the
+/// variant's price or the product's base price. Combined with the quantity,
+/// the price allows accurate order total reconstruction at any future point.
+///
+/// **Historical Integrity**
+///
+/// Order items are preserved indefinitely as part of the customer's purchase
+/// history. Three types of snapshots — product state, variant state, and
+/// seller profile — are captured at order creation and stored in dedicated
+/// snapshot tables, ensuring the full context of each purchase remains
+/// auditable even after products are modified or sellers delete their
+/// accounts.
+///
+/// @namespace shopping_mall_order
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The {@link shopping_mall_orders order} this line item belongs to.
+  ///
+  /// Every order item is always part of exactly one order. The order provides
+  /// the customer context, shipping address, and overall order-level grouping.
+  /// Multiple order items within the same order may originate from different
+  /// sellers.
+  shopping_mall_order_id String
+  
+  /// The {@link shopping_mall_product_variants product variant} purchased in
+  /// this line item.
+  ///
+  /// This reference captures exactly which variant (SKU) the customer
+  /// purchased. Combined with the snapshot tables, it provides traceability
+  /// back to the specific product configuration at purchase time. Preserved
+  /// even if the variant or its parent product is later deleted by the seller.
+  shopping_mall_product_variant_id String
+  
+  /// The {@link shopping_mall_shipments shipment} that contains this order
+  /// item.
+  ///
+  /// Nullable because items start in `paid` status without any shipment
+  /// assignment. When the seller creates a shipment grouping items from the
+  /// same order, this reference is populated and the item transitions to
+  /// `shipped` status. All items in a shipment share the same carrier and
+  /// tracking information.
+  shopping_mall_shipment_id String?
+  
+  /// The number of units of this variant purchased in this line item.
+  ///
+  /// When a customer adds the same variant to their cart multiple times, the
+  /// quantities combine into a single order item at checkout rather than
+  /// creating separate line items. For example, adding 2 units and then 3 more
+  /// of the same variant results in one order item with quantity 5.
+  quantity Int
+  
+  /// The unit price of the variant at the moment of order creation, frozen for
+  /// historical accuracy.
+  ///
+  /// This value is captured once at purchase time and never updated. It
+  /// represents the actual price the customer paid per unit, which may differ
+  /// from the current variant price if the seller later adjusts pricing.
+  /// Combined with quantity, it enables accurate order total calculation.
+  price Float
+  
+  /// The current lifecycle status of this individual order item.
+  ///
+  /// Tracks the item's progression through five states: `paid` (initial state
+  /// after order placement), `shipped` (assigned to a shipment by the seller),
+  /// `delivered` (confirmed by customer or auto-confirmed after 14 days),
+  /// `cancelled` (seller approved cancellation request while in `paid` state),
+  /// and `refunded` (seller approved refund request while in `delivered`
+  /// state, within 7 days of delivery).
+  ///
+  /// Each item transitions independently — different items within the same
+  /// order may have different statuses, reflecting partial fulfillment,
+  /// partial cancellation, and partial refund scenarios.
+  status String
+  
+  /// Timestamp when this order item was created, coinciding with successful
+  /// order placement.
+  created_at DateTime
+  
+  /// Timestamp of the most recent modification to this order item, including
+  /// status transitions (shipment assignment, delivery confirmation,
+  /// cancellation, or refund).
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  productVariant shopping_mall_product_variants @relation(fields: [shopping_mall_product_variant_id], references: [id], onDelete: Cascade)
+  shipment shopping_mall_shipments? @relation(fields: [shopping_mall_shipment_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  cancellationRequests shopping_mall_cancellation_requests[]
+  refundRequests shopping_mall_refund_requests[]
+  productSnapshot shopping_mall_order_item_product_snapshots?
+  variantSnapshot shopping_mall_order_item_variant_snapshots?
+  sellerSnapshot shopping_mall_order_item_seller_snapshots?
+  reviews shopping_mall_review_reviews[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([shopping_mall_product_variant_id])
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_order_id, shopping_mall_product_variant_id], map: "shopping_mall_order_items_shopping_mall_order_id_shopp_d221d815")
+  @@index([shopping_mall_order_id, created_at])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_shipment_id, created_at], map: "shopping_mall_order_items_shopping_mall_shipment_id_cr_6e2d5f91")
+}
+
+/// Seller-specific packages within an order, grouping {@link
+/// shopping_mall_order_items} from the same seller with carrier and tracking
+/// information.
+///
+/// Each shipment belongs to exactly one {@link shopping_mall_orders} and is
+/// created by exactly one {@link shopping_mall_sellers}. When a shipment is
+/// created, all associated order items transition to "shipped" status. The
+/// shipment captures the carrier name and tracking number for customer
+/// package tracking.
+///
+/// Delivery can be confirmed by the customer, which sets the delivered_at
+/// timestamp and transitions all contained order items to "delivered"
+/// status. If not manually confirmed, delivery is auto-confirmed 14 days
+/// after the shipment was created (using created_at as the shipping
+/// timestamp). The delivered_at field remains null until confirmation
+/// occurs, serving as the delivery state indicator.
+///
+/// Different sellers always ship separately — items from different sellers
+/// within the same order are never grouped into the same shipment. A single
+/// seller may create multiple shipments for the same order if items are sent
+/// in separate packages.
+///
+/// @namespace shopping_mall_order
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_shipments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the {@link shopping_mall_orders} this shipment belongs to.
+  ///
+  /// Every shipment is scoped to a single order. Multiple shipments can exist
+  /// for the same order when different sellers ship their items separately, or
+  /// when a single seller splits items across multiple packages.
+  shopping_mall_order_id String
+  
+  /// Reference to the {@link shopping_mall_sellers} who creates and sends this
+  /// shipment.
+  ///
+  /// Different sellers always ship separately — items from different sellers
+  /// within the same order are never grouped into the same shipment. A single
+  /// seller may create multiple shipments for the same order if items are sent
+  /// in separate packages.
+  shopping_mall_seller_id String
+  
+  /// Name of the shipping carrier handling this shipment (e.g., "FedEx",
+  /// "UPS", "DHL").
+  ///
+  /// Entered by the seller at shipment creation and shared by all order items
+  /// in this shipment.
+  carrier_name String
+  
+  /// Tracking number provided by the carrier for monitoring package delivery
+  /// progress.
+  ///
+  /// Entered by the seller at shipment creation and shared by all order items
+  /// in this shipment. Used by customers to track their packages through the
+  /// carrier's tracking system.
+  tracking_number String
+  
+  /// Timestamp when delivery was confirmed, either manually by the customer or
+  /// automatically 14 days after shipment creation.
+  ///
+  /// Null until delivery is confirmed. Serves as the delivery state indicator
+  /// — a null value means the shipment is in transit (items are in "shipped"
+  /// status), while a non-null value means delivery is complete (items
+  /// transition to "delivered" status).
+  delivered_at DateTime?
+  
+  /// Timestamp when the shipment was created and all contained order items
+  /// transitioned to "shipped" status.
+  ///
+  /// Also serves as the shipping timestamp for the 14-day auto-delivery
+  /// confirmation countdown.
+  created_at DateTime
+  
+  /// Timestamp of the last modification to this shipment record, such as
+  /// tracking information updates or delivery confirmation.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for retention and recovery purposes.
+  ///
+  /// Null when the shipment is active. Set when the shipment record is
+  /// removed, preserving the data for audit and dispute resolution.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  orderItems shopping_mall_order_items[]
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_order_id, shopping_mall_seller_id], map: "shopping_mall_shipments_shopping_mall_order_id_shoppin_b234fb71")
+  @@index([shopping_mall_seller_id, created_at])
+}
+
+/// Per-item pre-shipment cancellation requests initiated by customers for
+/// individual order items in "paid" status.
+///
+/// Customers create cancellation requests for order items that have been
+/// paid but not yet shipped. Each request includes a reason text explaining
+/// why cancellation is needed. The seller who owns the product reviews the
+/// request and either approves or rejects it. On approval, the system
+/// processes a refund and restores the variant's stock quantity via a
+/// positive {@link shopping_mall_inventory_records} entry.
+///
+/// The request status tracks the workflow: newly created requests start as
+/// "pending," and the seller's response transitions the status to either
+/// "approved" or "rejected." When a seller responds, a {@link
+/// shopping_mall_cancellation_request_snapshots} is created to capture the
+/// request state at the moment of response for audit and dispute resolution.
+///
+/// Multiple cancellation requests may exist for the same order item,
+/// allowing customers to re-request after a rejection. The customer who
+/// created the request is reachable through the {@link
+/// shopping_mall_order_items} → {@link shopping_mall_orders} → customer
+/// chain, and the responding seller is reachable through the order item →
+/// product variant → product → seller chain, maintaining third normal form.
+///
+/// @namespace shopping_mall_order
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_cancellation_requests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the {@link shopping_mall_order_items} being cancelled.
+  ///
+  /// Each cancellation request targets a single order item. The order item
+  /// must be in "paid" status (not yet shipped) for the cancellation to be
+  /// eligible. Multiple requests may reference the same order item, enabling
+  /// re-request after a prior rejection.
+  shopping_mall_order_item_id String
+  
+  /// Customer-provided explanation for why the cancellation is being requested.
+  ///
+  /// This free-text field captures the customer's rationale, helping the
+  /// seller understand the context when deciding whether to approve or reject
+  /// the request. The reason text is preserved in {@link
+  /// shopping_mall_cancellation_request_snapshots} created at the time of
+  /// seller response.
+  reason String
+  
+  /// Current state of the cancellation request in the approval workflow.
+  ///
+  /// Valid values are "pending" (awaiting seller review), "approved" (seller
+  /// accepted the cancellation — triggers refund and stock restoration), and
+  /// "rejected" (seller declined the cancellation — order item remains in paid
+  /// status). New requests default to "pending."
+  status String
+  
+  /// Timestamp when the cancellation request was submitted by the customer.
+  created_at DateTime
+  
+  /// Timestamp when the cancellation request was last modified, including
+  /// status transitions upon seller response.
+  updated_at DateTime
+  
+  /// Soft-delete timestamp. Populated when the cancellation request record is
+  /// removed, preserving the request for audit trails while hiding it from
+  /// active views.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  orderItem shopping_mall_order_items @relation(fields: [shopping_mall_order_item_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  snapshots shopping_mall_cancellation_request_snapshots[]
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_order_item_id, status], map: "shopping_mall_cancellation_requests_shopping_mall_orde_2f2b5e14")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_order_item_id, created_at], map: "shopping_mall_cancellation_requests_shopping_mall_orde_706003cc")
+}
+
+/// Per-item post-delivery refund requests submitted by customers within 7
+/// calendar days of delivery confirmation.
+///
+/// Each refund request targets a single {@link shopping_mall_order_items}
+/// whose status is delivered and whose delivery was confirmed within the
+/// preceding 7 days. The customer provides a free-text reason explaining why
+/// the refund is sought. The responsible seller — identified through the
+/// order item's product variant ownership chain — reviews the request and
+/// may approve or reject it.
+///
+/// Refund requests progress through a three-state workflow: pending (initial
+/// state upon submission, awaiting seller action), approved (seller accepts
+/// the refund — triggers refund processing for that item and stock
+/// restoration via a positive inventory record in {@link
+/// shopping_mall_inventory_records}), or rejected (seller declines the
+/// refund — no further action taken). The responded_at timestamp records the
+/// exact moment of the seller's decision. Upon seller response, an immutable
+/// snapshot of the request state is created in {@link
+/// shopping_mall_refund_request_snapshots}, preserving the reason and status
+/// at the time of decision for dispute resolution and audit.
+///
+/// If all items in an order are refunded, the parent order's derived status
+/// transitions to refunded. Seller and customer identities are not
+/// denormalized here — they are derived through the FK chain from the order
+/// item through its parent order and product variant respectively.
+///
+/// @namespace shopping_mall_order
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_refund_requests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the {@link shopping_mall_order_items} for which the refund
+  /// is being requested.
+  ///
+  /// The targeted order item must be in delivered status at the time of
+  /// request creation, and its delivery confirmation must have occurred within
+  /// the preceding 7 calendar days. The order item carries the purchased
+  /// quantity, price at purchase, and links to the product variant and seller
+  /// whose profile snapshots were captured at order creation time.
+  shopping_mall_order_item_id String
+  
+  /// Customer-provided explanation for requesting the refund.
+  ///
+  /// This free-text field captures the customer's justification — for example,
+  /// product defect, not as described, changed mind after receiving the item,
+  /// or any other reason the customer wishes to communicate to the seller. The
+  /// reason text is preserved immutably in {@link
+  /// shopping_mall_refund_request_snapshots} when the seller responds.
+  reason String
+  
+  /// Current state of the refund request within the seller approval workflow.
+  ///
+  /// Valid values are: pending (awaiting seller review — initial state on
+  /// creation), approved (seller accepted the refund — triggers refund
+  /// processing and stock restoration via {@link
+  /// shopping_mall_inventory_records}), or rejected (seller declined the
+  /// refund — no further action taken, though the customer may submit a new
+  /// refund request within the remaining 7-day window).
+  status String
+  
+  /// Timestamp of when the seller submitted their approval or rejection
+  /// decision.
+  ///
+  /// Null while the request remains in pending status. Set to the exact moment
+  /// the seller's response is recorded, which also triggers creation of a
+  /// corresponding {@link shopping_mall_refund_request_snapshots} entry
+  /// capturing the full request state at the time of decision for audit
+  /// purposes.
+  responded_at DateTime?
+  
+  /// Timestamp of when the customer submitted the refund request.
+  ///
+  /// Used in conjunction with the order item's delivery confirmation timestamp
+  /// to validate that the request falls within the 7-calendar-day eligibility
+  /// window.
+  created_at DateTime
+  
+  /// Timestamp of the most recent modification to this refund request record.
+  ///
+  /// Updated automatically whenever the record changes — including status
+  /// transitions when the seller responds and the responded_at field is set.
+  updated_at DateTime
+  
+  /// Soft-delete timestamp for audit-preserving record removal.
+  ///
+  /// When non-null, the refund request is considered deleted from the
+  /// customer's and seller's active views but the record — along with its
+  /// associated {@link shopping_mall_refund_request_snapshots} — is retained
+  /// indefinitely for regulatory compliance and dispute resolution.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  orderItem shopping_mall_order_items @relation(fields: [shopping_mall_order_item_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  snapshots shopping_mall_refund_request_snapshots[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([status, created_at])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_order_item_id, created_at], map: "shopping_mall_refund_requests_shopping_mall_order_item_db19a13c")
+}
+
+/// Immutable snapshot of product data captured at order creation time.
+///
+/// Preserves the complete product state — name, description, category, and
+/// base price — at the moment an order is placed. This ensures historical
+/// order accuracy regardless of later product modifications or deletion by
+/// the seller. Each {@link shopping_mall_order_items} has exactly one
+/// product snapshot.
+///
+/// References the original {@link shopping_mall_products} and {@link
+/// shopping_mall_categories} for traceability, while storing denormalized
+/// values (name, description, base_price, category_name) for permanence.
+/// Product images at the time of purchase are captured in the companion
+/// {@link shopping_mall_order_item_product_snapshot_images} table.
+///
+/// This table is immutable — records are created once and never updated or
+/// deleted. They serve as the authoritative source for displaying product
+/// information in historical orders and for dispute resolution.
+///
+/// @namespace shopping_mall_order
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_item_product_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the order item this product snapshot belongs to.
+  ///
+  /// Establishes a 1:1 relationship — each {@link shopping_mall_order_items}
+  /// has exactly one product snapshot capturing the product state at the time
+  /// of purchase.
+  shopping_mall_order_item_id String
+  
+  /// Reference to the original product that was purchased.
+  ///
+  /// Nullable because the original {@link shopping_mall_products} may be
+  /// deleted by the seller after the order is placed. The denormalized fields
+  /// (name, description, base_price, category_name) preserve the product's
+  /// state at purchase time even when this reference becomes invalid.
+  shopping_mall_product_id String?
+  
+  /// Reference to the category the product belonged to at purchase time.
+  ///
+  /// Nullable because the original {@link shopping_mall_categories} may be
+  /// deleted or restructured by administrators after the order is placed. The
+  /// denormalized `category_name` field preserves the category information for
+  /// historical accuracy.
+  shopping_mall_category_id String?
+  
+  /// Product name as it appeared at the time of order placement.
+  ///
+  /// Preserved verbatim from the original product regardless of later edits,
+  /// ensuring historical accuracy in order records.
+  name String
+  
+  /// Product description as it appeared at the time of order placement.
+  ///
+  /// Captures the full descriptive text from the original product at purchase
+  /// time.
+  description String
+  
+  /// Base price of the product at the time of order placement.
+  ///
+  /// Preserved in the original currency unit. This is the product-level base
+  /// price, distinct from the variant-specific price recorded in {@link
+  /// shopping_mall_order_item_variant_snapshots}.
+  base_price Float
+  
+  /// Denormalized category name at the time of order placement.
+  ///
+  /// Preserved for historical accuracy even if the referenced category is
+  /// later renamed, restructured, or deleted. Provides a direct human-readable
+  /// category label for order history displays without requiring a join to the
+  /// categories table.
+  category_name String
+  
+  /// Timestamp when this snapshot was created, corresponding to the order
+  /// creation time.
+  ///
+  /// Immutable — set once at order placement and never changed.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  orderItem shopping_mall_order_items @relation(fields: [shopping_mall_order_item_id], references: [id], onDelete: Cascade)
+  product shopping_mall_products? @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  category shopping_mall_categories? @relation(fields: [shopping_mall_category_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  productSnapshotImages shopping_mall_order_item_product_snapshot_images[]
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_category_id], map: "shopping_mall_order_item_product_snapshots_shopping_ma_41a8f615")
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_order_item_id], map: "shopping_mall_order_item_product_snapshots_shopping_ma_5010446f")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_id, created_at], map: "shopping_mall_order_item_product_snapshots_shopping_ma_3edcf6cd")
+}
+
+/// Immutable snapshot of variant data captured at order creation time,
+/// preserving SKU code, option values, and price for historical order
+/// accuracy.
+///
+/// Created when a customer places an order, this snapshot freezes the
+/// variant state at the moment of purchase. Even if the original {@link
+/// shopping_mall_product_variants} is later modified or deleted, this record
+/// ensures that order history always reflects what was actually purchased.
+/// The snapshot is append-only and never updated — it serves as an
+/// auditable, tamper-proof record for dispute resolution and order
+/// verification.
+///
+/// Each {@link shopping_mall_order_items} has exactly one variant snapshot,
+/// establishing a 1:1 relationship. The snapshot captures the SKU code as
+/// the unique product identifier within the seller's catalog, the option
+/// values as a human-readable description of the variant's attributes (e.g.,
+/// "Color: Red, Size: Large"), and the price at which the variant was sold.
+///
+/// @namespace shopping_mall_order
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_item_variant_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the order item this variant snapshot belongs to.
+  ///
+  /// Each order item captures exactly one product variant at purchase time.
+  /// This 1:1 relationship ensures that every purchased variant has its state
+  /// preserved in immutable form, regardless of later changes to the original
+  /// {@link shopping_mall_product_variants} record.
+  shopping_mall_order_item_id String
+  
+  /// The SKU code of the variant at the time of order placement.
+  ///
+  /// Captures the unique stock-keeping unit identifier as it existed when the
+  /// order was created. Even if the seller later changes the SKU code on the
+  /// original variant, this snapshot preserves the original value for order
+  /// history and auditing.
+  sku_code String
+  
+  /// Human-readable description of the variant's option attributes at the time
+  /// of order placement.
+  ///
+  /// Stores the denormalized combination of option values (e.g., "Color: Red,
+  /// Size: Large") that distinguished this variant from others of the same
+  /// product. Preserved as a single string for historical accuracy — querying
+  /// individual option components is unnecessary for immutable snapshots.
+  option_values String
+  
+  /// The price of the variant at the time of order placement.
+  ///
+  /// Records the exact amount the customer paid for this variant. This may
+  /// differ from the current price of the original variant if the seller later
+  /// adjusts pricing. Used for order total calculation and financial
+  /// reconciliation.
+  price Float
+  
+  /// Timestamp when this snapshot was created, which coincides with order
+  /// placement time.
+  ///
+  /// Since snapshots are append-only and immutable, this field represents both
+  /// the creation time of the snapshot record and the effective time of the
+  /// captured variant state.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  orderItem shopping_mall_order_items @relation(fields: [shopping_mall_order_item_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_order_item_id], map: "shopping_mall_order_item_variant_snapshots_shopping_ma_6a658db4")
+}
+
+/// Immutable snapshot of seller profile data captured at order creation time.
+///
+/// Records the seller's shop name and logo image as they appeared when an
+/// order was placed. This ensures historical order accuracy — even if the
+/// seller later changes their profile or deletes their account, past orders
+/// display the original seller information. Each snapshot belongs to a
+/// single {@link shopping_mall_order_items} and is created once during
+/// checkout, never modified afterward.
+///
+/// @namespace shopping_mall_order
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_item_seller_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Foreign key to the {@link shopping_mall_order_items} that this seller
+  /// profile snapshot was captured for.
+  ///
+  /// Establishes which order item this snapshot belongs to. Each order item
+  /// captures one seller profile snapshot at the moment of purchase to
+  /// preserve the seller's identity for historical accuracy.
+  shopping_mall_order_item_id String
+  
+  /// The seller's shop name as recorded at the time of order creation.
+  ///
+  /// Denormalized from the seller's profile to preserve historical accuracy.
+  /// Even if the seller later changes their shop name or deletes their
+  /// account, past orders continue to display the original shop name.
+  shop_name String
+  
+  /// URL of the seller's logo image as recorded at the time of order creation.
+  ///
+  /// Denormalized from the seller's profile to preserve historical accuracy.
+  /// May be null if the seller had not uploaded a logo at the time of
+  /// purchase.
+  logo_image_url String?
+  
+  /// Timestamp when this seller profile snapshot was created.
+  ///
+  /// Set at order creation time and never modified. This records exactly when
+  /// the seller profile state was captured for historical reference.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  orderItem shopping_mall_order_items @relation(fields: [shopping_mall_order_item_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_order_item_id], map: "shopping_mall_order_item_seller_snapshots_shopping_mal_0d006374")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_order_item_id, created_at], map: "shopping_mall_order_item_seller_snapshots_shopping_mal_1a9f4b6a")
+}
+
+/// Immutable state snapshots capturing cancellation request data at the
+/// moment of seller response.
+///
+/// Each snapshot records the reason text and status of a {@link
+/// shopping_mall_cancellation_requests} at the precise moment the seller
+/// approves or rejects the cancellation. These snapshots serve as an
+/// auditable history for dispute resolution and accountability. Snapshots
+/// are immutable and cannot be modified or deleted, ensuring a permanent
+/// record of every cancellation decision.
+///
+/// @namespace shopping_mall_order
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_cancellation_request_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the parent cancellation request.
+  ///
+  /// Links this snapshot to its originating {@link
+  /// shopping_mall_cancellation_requests}, establishing the ownership chain
+  /// for the audit trail.
+  shopping_mall_cancellation_request_id String
+  
+  /// The cancellation reason text as captured at the moment of seller response.
+  ///
+  /// This is the reason the customer originally submitted with the
+  /// cancellation request, preserved in its exact form at the time the seller
+  /// made their decision.
+  reason String
+  
+  /// The status of the cancellation request at the moment of seller response.
+  ///
+  /// Records whether the seller approved or rejected the cancellation,
+  /// providing a permanent record of the outcome for accountability and
+  /// dispute resolution.
+  status String
+  
+  /// Timestamp when this snapshot was created.
+  ///
+  /// Records the exact moment the seller responded to the cancellation
+  /// request, serving as the chronological anchor for audit trail ordering.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  cancellationRequest shopping_mall_cancellation_requests @relation(fields: [shopping_mall_cancellation_request_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_cancellation_request_id, created_at], map: "shopping_mall_cancellation_request_snapshots_shopping__802546ef")
+}
+
+/// Immutable state snapshots capturing refund request data at the moment of
+/// seller response.
+///
+/// Created automatically when a seller approves or rejects a {@link
+/// shopping_mall_refund_requests RefundRequest}, this snapshot preserves the
+/// customer's reason text, the resulting status (approved or rejected), the
+/// responding seller's identity, and the timestamp of the response. These
+/// records are permanently locked — they cannot be modified or deleted by
+/// any actor, including administrators.
+///
+/// This immutability supports the platform's accountability model for
+/// monetary transactions. When a refund dispute arises between a buyer and
+/// seller, the snapshot provides an auditable, verifiable record of exactly
+/// what was requested, who decided the outcome, and when the decision was
+/// made. Snapshots persist even if the parent refund request or the seller's
+/// account is later deleted, ensuring the historical record remains intact
+/// for legal compliance and dispute resolution.
+///
+/// @namespace shopping_mall_order
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_refund_request_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key uniquely identifying this refund request snapshot.
+  id String @id
+  
+  /// References the {@link shopping_mall_refund_requests RefundRequest} whose
+  /// state is captured in this snapshot.
+  ///
+  /// Identifies which refund request was modified when this snapshot was
+  /// created. Through this reference, the snapshot is traceable back to the
+  /// originating order item and the customer who filed the request.
+  shopping_mall_refund_request_id String
+  
+  /// References the {@link shopping_mall_sellers Seller} who responded to the
+  /// refund request.
+  ///
+  /// Identifies which seller approved or rejected the refund, establishing
+  /// accountability for the response decision. Preserved even if the seller's
+  /// account is later deleted.
+  seller_id String
+  
+  /// The customer-written reason explaining why they are requesting a refund.
+  ///
+  /// Captured at the moment of the seller's response, preserving the exact
+  /// text the seller reviewed when making their approval or rejection
+  /// decision. This text is the customer's original explanation and is frozen
+  /// in the snapshot — later edits to the refund request (if any) do not alter
+  /// this captured value.
+  reason String
+  
+  /// The status of the refund request at the moment this snapshot was created.
+  ///
+  /// Records the seller's decision: "approved" indicating the refund was
+  /// accepted and payment will be returned with stock restored, or "rejected"
+  /// indicating the refund was denied. This is a terminal state — the refund
+  /// request does not transition further after this point.
+  status String
+  
+  /// Timestamp recording when this snapshot was created, which corresponds to
+  /// the exact moment the seller responded to the refund request.
+  ///
+  /// Serves as the authoritative record of when the seller made their approval
+  /// or rejection decision, supporting timeline verification for dispute
+  /// resolution and the seven-day refund window calculation.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  refundRequest shopping_mall_refund_requests @relation(fields: [shopping_mall_refund_request_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [seller_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_refund_request_id, created_at], map: "shopping_mall_refund_request_snapshots_shopping_mall_r_7cee8140")
+  @@index([seller_id, created_at])
+}
+
+/// Image URLs captured within an order item product snapshot, preserving the
+/// display order and image state at the time of purchase.
+///
+/// Each {@link shopping_mall_order_item_product_snapshots order item product
+/// snapshot} can have multiple images reflecting the product's gallery at
+/// order time. These images are frozen at the moment of purchase and never
+/// modified, ensuring historical accuracy even if the seller later changes
+/// or deletes the original product images. The display_order field preserves
+/// the gallery ordering as it existed at purchase time.
+///
+/// @namespace shopping_mall_order
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_item_product_snapshot_images {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the parent {@link shopping_mall_order_item_product_snapshots
+  /// order item product snapshot} that this image belongs to.
+  ///
+  /// Each product snapshot captures the complete product state at purchase
+  /// time and may include multiple images. Deleting a product snapshot
+  /// cascades to delete its images.
+  shopping_mall_order_item_product_snapshot_id String
+  
+  /// URL pointing to the product image file.
+  ///
+  /// The image URL is captured at purchase time and preserved in the snapshot
+  /// for historical accuracy. Even if the seller later deletes or replaces
+  /// this image, this URL reference in the snapshot remains as a historical
+  /// record of what the product listing looked like at the time of purchase.
+  image_url String
+  
+  /// Sequential ordering of images within the product gallery as presented at
+  /// purchase time.
+  ///
+  /// Lower values appear first. The first image (lowest display_order)
+  /// typically served as the main thumbnail image. This ordering is frozen at
+  /// snapshot time and reflects the gallery arrangement the customer saw when
+  /// placing the order.
+  display_order Int
+  
+  /// Timestamp when this snapshot image record was created.
+  ///
+  /// Set at order creation time when the order item product snapshot is
+  /// captured. Immutable after creation — snapshot data is never updated.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  productSnapshot shopping_mall_order_item_product_snapshots @relation(fields: [shopping_mall_order_item_product_snapshot_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_order_item_product_snapshot_id, display_order], map: "shopping_mall_order_item_product_snapshot_images_shopp_fcccb446")
+}

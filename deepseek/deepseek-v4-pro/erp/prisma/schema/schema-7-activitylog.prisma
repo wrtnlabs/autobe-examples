@@ -1,0 +1,98 @@
+/// Immutable audit trail entries recording significant actions across the
+/// organization for accountability and transparency.
+///
+/// Each entry captures who performed what action on which entity at what
+/// time, providing a complete chronological record of operational changes.
+/// The log is append-only — entries are never modified or deleted once
+/// created.
+///
+/// Logged actions span the full organizational lifecycle: employee
+/// invitations, activations, and deactivations; contract creation and
+/// editing; project creation, archival, completion, and deletion; task
+/// status transitions; timesheet submissions, approvals, and rejections; and
+/// role assignments and changes. The user who performed the action is always
+/// recorded, and every entry is scoped to a single organization.
+///
+/// The `details` field stores action-type-specific contextual information as
+/// JSON, such as old and new values for status changes or rejection reasons
+/// for timesheet rejections. The `target_entity` and `target_id` fields
+/// together identify the specific business object affected by the action
+/// through a polymorphic reference pattern.
+///
+/// @namespace activitylog
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_hrm_activity_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the activity log entry.
+  id String @id
+  
+  /// The authenticated user who performed the action, establishing individual
+  /// accountability for every recorded event.
+  ///
+  /// Every activity log entry is traceable to a specific user. This field is
+  /// never null — all logged actions must have a known actor.
+  user_id String
+  
+  /// The organization where the action occurred.
+  ///
+  /// Enforces multi-tenancy data isolation — activity logs are always scoped
+  /// to a single organization and users can only view logs for their currently
+  /// selected organization context.
+  organization_id String
+  
+  /// Category label classifying the nature of the action performed.
+  ///
+  /// Recognized types include: employee_invited, employee_deactivated,
+  /// employee_reactivated, contract_created, contract_edited, project_created,
+  /// project_archived, project_completed, project_deleted,
+  /// task_status_changed, timesheet_submitted, timesheet_approved,
+  /// timesheet_rejected, role_assigned, and role_changed.
+  action_type String
+  
+  /// The type of business object affected by the action.
+  ///
+  /// Examples: "employee", "contract", "project", "task", "timesheet", "role".
+  /// Together with `target_id`, this identifies the specific entity instance
+  /// that was created, modified, or transitioned.
+  target_entity String
+  
+  /// The unique identifier of the specific business object affected by the
+  /// action.
+  ///
+  /// This is a polymorphic reference — the actual table is determined by
+  /// `target_entity`. It is not a foreign key since it can point to multiple
+  /// different entity types.
+  target_id String
+  
+  /// Optional contextual information stored as JSON, supplementing the action
+  /// record with action-type-specific data.
+  ///
+  /// Examples: old and new status values for task status changes, rejection
+  /// reasons for timesheet rejections, or contract terms for contract edits.
+  /// Null when no additional context is available.
+  details String?
+  
+  /// The exact date and time when the action was completed and this log entry
+  /// was recorded.
+  ///
+  /// This is the sole temporal field — activity log entries are immutable
+  /// append-only records that are never updated or deleted.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  user erp_hrm_members @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([user_id])
+  @@index([organization_id, created_at])
+  // spellchecker: ignore-next-line
+  @@index([organization_id, action_type, created_at], map: "erp_hrm_activity_logs_organization_id_action_type_crea_b7e864ea")
+  @@index([organization_id, user_id, created_at])
+}

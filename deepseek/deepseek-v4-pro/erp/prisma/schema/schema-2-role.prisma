@@ -1,0 +1,205 @@
+/// Role definitions scoped to an organization, including the three immutable
+/// built-in roles (Owner, Manager, Employee) and custom roles created by
+/// organization owners.
+///
+/// Each role carries a set of permissions that define exactly what actions
+/// the role holder is allowed to perform within the organization. The
+/// permission set is stored via the role_permissions junction table linking
+/// to the fixed permissions catalog.
+///
+/// Built-in roles are pre-configured upon organization creation and cannot
+/// be deleted regardless of employee assignment. Custom roles can be
+/// created, edited, and soft-deleted by owners, but deletion is rejected
+/// while any employees are assigned to the role. Each employee in an
+/// organization holds exactly one role at any given time, and the role's
+/// permission set determines all access rights for that employee.
+///
+/// @namespace role
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_hrm_roles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the organization that owns this role.
+  ///
+  /// Scopes the role to a single organization for multi-tenancy isolation.
+  /// Combined with the role name to form a unique constraint ensuring no two
+  /// roles within the same organization share the same name.
+  erp_hrm_organization_id String
+  
+  /// Human-readable role name that uniquely identifies the role within its
+  /// organization.
+  ///
+  /// Serves as the primary way users and administrators distinguish between
+  /// different roles. Must be unique within a single organization. Examples
+  /// include the three built-in names — Owner, Manager, Employee — and custom
+  /// names such as Finance Manager or Senior Developer.
+  name String
+  
+  /// Indicates whether this role is one of the three built-in roles
+  /// provisioned automatically at organization creation.
+  ///
+  /// Built-in roles (Owner, Manager, Employee) are immutable — they can never
+  /// be deleted regardless of how many employees are assigned. Custom roles
+  /// have this flag set to false and may be soft-deleted when no employees are
+  /// assigned to them.
+  is_builtin Boolean
+  
+  /// Optional description explaining the role's intended purpose, scope, and
+  /// responsibilities within the organization.
+  ///
+  /// Provides context for organization owners and administrators when managing
+  /// roles, clarifying what level of access each role entails.
+  description String?
+  
+  /// Timestamp when the role was created.
+  ///
+  /// For built-in roles this matches the organization creation time. For
+  /// custom roles this reflects when the owner defined the role.
+  created_at DateTime
+  
+  /// Timestamp when the role was last modified.
+  ///
+  /// Updated whenever the role's name, description, or permission set changes.
+  /// Permission changes take effect immediately for all employees assigned to
+  /// the role.
+  updated_at DateTime
+  
+  /// Soft-delete timestamp for custom roles.
+  ///
+  /// Null for active roles. Set when an owner deletes a custom role that has
+  /// no employees assigned to it. Always null for built-in roles since they
+  /// are never deletable.
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  employees erp_hrm_employees[]
+  rolePermissions erp_hrm_role_permissions[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([erp_hrm_organization_id, name])
+  @@index([erp_hrm_organization_id, created_at])
+}
+
+/// Fixed catalog of available permissions that can be granted to roles
+/// within an organization.
+///
+/// This table seeds the nine built-in permissions covering organization
+/// management, employee management, project management, time tracking,
+/// approval workflows, and reporting. Each permission is identified by a
+/// unique dot-notation key (e.g., "org:manage") and carries a human-readable
+/// description of what access it grants. Permissions are immutable system
+/// constants — they are never created, updated, or deleted at runtime.
+///
+/// Permissions are assigned to roles through the {@link
+/// erp_hrm_role_permissions} junction table. The set of permissions a role
+/// holds determines what operations members with that role can perform
+/// within their organization context.
+///
+/// @namespace role
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_hrm_permissions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique dot-notation identifier for this permission (e.g., "org:manage",
+  /// "employee:view").
+  ///
+  /// The key follows a `{domain}:{action}` convention and serves as the
+  /// canonical reference used in authorization checks throughout the system.
+  key String
+  
+  /// Human-readable explanation of what operations this permission grants.
+  ///
+  /// Describes the scope of access in plain language so administrators can
+  /// understand what each permission enables when assigning roles.
+  description String
+  
+  /// Timestamp when this permission was seeded into the system.
+  created_at DateTime
+  
+  /// Timestamp of the last modification to this permission record. For the
+  /// fixed catalog, this is typically equal to created_at.
+  updated_at DateTime
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  permissionRoles erp_hrm_role_permissions[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([key])
+}
+
+/// Many-to-many junction table linking roles to their granted permissions.
+///
+/// Each row represents one permission assigned to one role within an
+/// organization. This junction enables the role-based access control system
+/// where custom roles in {@link erp_hrm_roles} aggregate a set of
+/// permissions from the fixed catalog in {@link erp_hrm_permissions}.
+/// Employees inherit permissions through their role assignment in {@link
+/// erp_hrm_employees}.
+///
+/// Built-in roles (Owner, Manager, Employee) have their permissions enforced
+/// at the business logic layer and do not rely on this junction table. The
+/// nine fixed permissions — org:manage, employee:manage, employee:view,
+/// project:manage, project:view, time:manage, time:approve, time:view_all,
+/// and report:view — are stored in the permission catalog.
+///
+/// @namespace role
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_hrm_role_permissions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the role receiving this permission grant.
+  ///
+  /// Links to {@link erp_hrm_roles}, establishing which role this permission
+  /// assignment belongs to. A role can have multiple permission grants,
+  /// together forming the complete permission set for that role.
+  erp_hrm_role_id String
+  
+  /// Reference to the permission being granted to the role.
+  ///
+  /// Links to {@link erp_hrm_permissions}, indicating which specific
+  /// permission from the fixed catalog is assigned. A permission can be
+  /// granted to multiple roles simultaneously.
+  erp_hrm_permission_id String
+  
+  /// Timestamp when this permission was assigned to the role.
+  created_at DateTime
+  
+  /// Timestamp when this permission assignment record was last modified.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  role erp_hrm_roles @relation(fields: [erp_hrm_role_id], references: [id], onDelete: Cascade)
+  permission erp_hrm_permissions @relation(fields: [erp_hrm_permission_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([erp_hrm_permission_id])
+  // spellchecker: ignore-next-line
+  @@unique([erp_hrm_role_id, erp_hrm_permission_id], map: "erp_hrm_role_permissions_erp_hrm_role_id_erp_hrm_permi_099a80ce")
+}

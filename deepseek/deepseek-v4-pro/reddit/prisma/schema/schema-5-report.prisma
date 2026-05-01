@@ -1,0 +1,96 @@
+/// User-submitted content reports flagging posts or comments for moderator
+/// review.
+///
+/// Reports are the primary community governance tool that enables members to
+/// bring problematic content to the attention of moderators. Each report is
+/// filed by a member against either a post or a comment within a specific
+/// community, with a required free-text reason explaining why the content
+/// should be reviewed.
+///
+/// Reports follow a three-status workflow tracked through the status field:
+/// pending (awaiting moderator review), approved (content deleted, report
+/// resolved), and dismissed (content kept, report removed from active list).
+/// Only moderators of the community where the flagged content resides can
+/// change a report's status.
+///
+/// The target is polymorphic, referencing either a {@link
+/// community_hub_posts} or a {@link community_hub_comments} through the
+/// target_type discriminator and target_id reference. The reporter is a
+/// {@link community_hub_members} account, and the report is scoped to a
+/// {@link community_hub_communities} so that only moderators of that
+/// community can review and act on it.
+///
+/// @namespace report
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_hub_reports {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The member who filed this report. References {@link
+  /// community_hub_members}. Establishes accountability so the reporting
+  /// mechanism cannot be abused anonymously.
+  community_hub_member_id String
+  
+  /// The community where the flagged content resides. Scopes the report so
+  /// that only moderators of this community can review and resolve it.
+  /// References {@link community_hub_communities}.
+  ///
+  /// Stored directly on the report rather than derived through the target
+  /// content to preserve the community reference after content deletion. When
+  /// a report is approved and the flagged content is removed, this field
+  /// ensures the report remains scoped for audit.
+  community_hub_community_id String
+  
+  /// Discriminator identifying the type of content being reported. Allowed
+  /// values are "post" for {@link community_hub_posts} or "comment" for {@link
+  /// community_hub_comments}.
+  target_type String
+  
+  /// The unique identifier of the reported content. References either a {@link
+  /// community_hub_posts} or a {@link community_hub_comments} record based on
+  /// the target_type discriminator.
+  target_id String
+  
+  /// The free-text reason provided by the reporting member explaining why the
+  /// content should be reviewed. Required — a report cannot be submitted
+  /// without this reason.
+  reason String
+  
+  /// The current stage of the report in the moderation workflow. Three values:
+  /// "pending" (awaiting moderator review, the default state when created),
+  /// "approved" (moderator confirmed the report, content deleted, report
+  /// resolved), and "dismissed" (moderator determined no action warranted,
+  /// content kept, report removed from active list). Only moderators of the
+  /// target community can change this status.
+  status String
+  
+  /// Timestamp when the report was filed. Used by moderators to prioritize
+  /// older reports and to display relative timestamps in report lists.
+  created_at DateTime
+  
+  /// Timestamp of the last status change or modification to the report.
+  /// Updated whenever a moderator approves or dismisses the report.
+  updated_at DateTime
+  
+  /// Soft-delete timestamp for administrative removal. Reports are typically
+  /// resolved through the status lifecycle rather than deleted, but this field
+  /// supports edge cases where a report must be purged entirely.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  reporter community_hub_members @relation(fields: [community_hub_member_id], references: [id], onDelete: Cascade)
+  community community_hub_communities @relation(fields: [community_hub_community_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([community_hub_community_id, status])
+  @@index([status, created_at])
+  @@index([community_hub_member_id, created_at])
+}

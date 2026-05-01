@@ -1,0 +1,128 @@
+/// Customer wishlist entries tracking products saved for future reference.
+///
+/// Each entry links a customer to a specific product they have saved to
+/// their wishlist. Products are tracked at the product level, not the
+/// variant level. A customer cannot add the same product to their wishlist
+/// more than once — the composite unique constraint on customer and product
+/// enforces this. Entries are automatically removed when the referenced
+/// product is deleted by its seller, ensuring all customer wishlists stay
+/// consistent.
+///
+/// @namespace shopping_mall_shopping
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_wishlist_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the {@link shopping_mall_customers} who owns this wishlist
+  /// entry.
+  ///
+  /// Establishes the customer as the owner of the wishlist entry. Each
+  /// customer maintains an independent wishlist of saved products. When the
+  /// customer account is deleted, their wishlist entries are also removed.
+  shopping_mall_customer_id String
+  
+  /// Reference to the {@link shopping_mall_products} saved in the wishlist.
+  ///
+  /// Tracks the product at the product level, not the variant level. When the
+  /// referenced product is deleted by its seller, this wishlist entry is
+  /// automatically removed across all customer wishlists to maintain
+  /// referential integrity.
+  shopping_mall_product_id String
+  
+  /// Timestamp when the product was added to the wishlist.
+  created_at DateTime
+  
+  /// Timestamp of the most recent update to this wishlist entry.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([shopping_mall_product_id])
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_customer_id, shopping_mall_product_id], map: "shopping_mall_wishlist_items_shopping_mall_customer_id_043f4270")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_id, created_at], map: "shopping_mall_wishlist_items_shopping_mall_customer_id_dcbce088")
+}
+
+/// Customer cart entries tracking specific product variants with selected
+/// quantities.
+///
+/// Each cart entry links a customer to a specific {@link
+/// shopping_mall_product_variants product variant} with a desired quantity.
+/// When the same variant is added to the cart again, quantities are combined
+/// into a single entry rather than creating duplicates. The cart is cleared
+/// on successful order placement — all entries for the customer are removed
+/// and converted into order items.
+///
+/// Variant availability is derived at query time: if the referenced variant
+/// is soft-deleted or has insufficient stock to cover the cart quantity, the
+/// item is marked as unavailable and the customer sees a warning. No derived
+/// or computed fields are stored — the database holds only the customer,
+/// variant reference, and quantity.
+///
+/// @namespace shopping_mall_shopping
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_cart_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the customer who owns this cart entry.
+  ///
+  /// Links to {@link shopping_mall_customers}. Each cart entry belongs to
+  /// exactly one customer. NOT NULL — cart items are always customer-scoped.
+  shopping_mall_customer_id String
+  
+  /// Reference to the selected product variant (SKU) the customer wants to
+  /// purchase.
+  ///
+  /// Links to {@link shopping_mall_product_variants}. NOT NULL — product
+  /// variants use soft-delete, so the FK remains valid even when a variant is
+  /// marked as deleted. Availability warnings (deleted variant, out of stock)
+  /// are computed at query time rather than stored.
+  shopping_mall_product_variant_id String
+  
+  /// Number of units of the variant the customer wants to purchase.
+  ///
+  /// Must be a positive integer. When the customer adds the same variant
+  /// again, this quantity is incremented rather than creating a duplicate
+  /// entry — enforced by the unique constraint on (customer_id,
+  /// product_variant_id).
+  quantity Int
+  
+  /// Timestamp when the cart entry was first created.
+  created_at DateTime
+  
+  /// Timestamp when the cart entry was last updated (quantity changed).
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  productVariant shopping_mall_product_variants @relation(fields: [shopping_mall_product_variant_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([shopping_mall_product_variant_id])
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_customer_id, shopping_mall_product_variant_id], map: "shopping_mall_cart_items_shopping_mall_customer_id_sho_b178638a")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_id, created_at], map: "shopping_mall_cart_items_shopping_mall_customer_id_cre_40f78827")
+}

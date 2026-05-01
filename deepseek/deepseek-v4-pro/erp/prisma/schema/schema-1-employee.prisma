@@ -1,0 +1,224 @@
+/// Central employee records bridging user accounts to organizations, holding
+/// role assignment, optional department membership, position title,
+/// employment type classification, and active/deactivated status.
+///
+/// Each employee represents one user's membership within one organization. A
+/// user may be an employee in multiple organizations simultaneously, but
+/// only once per organization. The employee record carries the user's
+/// organization-specific identity: their assigned role, optional department,
+/// and descriptive position.
+///
+/// **Lifecycle**: Employees are created through invitation acceptance or
+/// direct assignment. Status transitions between active and deactivated
+/// control access to time tracking and timesheet submission. Deactivated
+/// employees retain all historical data (timelogs, timesheets, contracts)
+/// but cannot create new entries. Deactivation is reversible via
+/// reactivation.
+///
+/// @namespace employee
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_hrm_employees {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the user account that owns this employee record.
+  ///
+  /// The user account provides authentication credentials and the global
+  /// profile (display name, avatar, phone) shared across all organizations.
+  /// Each user-member pair is unique within an organization — a user cannot
+  /// have duplicate employee records in the same organization.
+  erp_hrm_member_id String
+  
+  /// Reference to the role assigned to this employee.
+  ///
+  /// Every employee must have exactly one role at all times. The role
+  /// determines the employee's permissions within the organization. The same
+  /// user may hold different roles in different organizations. Role assignment
+  /// can be changed by users with `employee:manage` permission, and the new
+  /// permissions take effect immediately.
+  erp_hrm_role_id String
+  
+  /// Reference to the optional department this employee belongs to.
+  ///
+  /// Department assignment is purely organizational — it carries no inherent
+  /// permissions and is used for grouping and reporting. When a department is
+  /// deleted, this reference is cleared without affecting the employee record.
+  /// An employee can exist without a department.
+  erp_hrm_department_id String?
+  
+  /// Reference to the organization that this employee belongs to.
+  ///
+  /// Establishes multi-tenancy scope. All employee data — timelogs,
+  /// timesheets, project assignments, contracts — is isolated within this
+  /// organization context.
+  erp_hrm_organization_id String
+  
+  /// Job title or position name describing the employee's function within the
+  /// organization (e.g., "Software Engineer", "Marketing Lead").
+  ///
+  /// Purely descriptive — carries no inherent permissions. Free-text field for
+  /// organizational clarity and reporting purposes.
+  position String?
+  
+  /// Classification of the employment relationship.
+  ///
+  /// Allowed values: `full-time`, `part-time`, `contractor`, `intern`. Used
+  /// for filtering and reporting. Determines how the employee appears in
+  /// workforce summaries and organizational charts.
+  employment_type String
+  
+  /// Current activity status of the employee within the organization.
+  ///
+  /// Allowed values: `active` (can log time, submit timesheets, participate in
+  /// projects), `deactivated` (cannot perform new actions but all historical
+  /// data is preserved). Deactivated employees can be reactivated.
+  /// Deactivation does not delete any associated records.
+  status String
+  
+  /// Timestamp when the employee record was created — either through
+  /// invitation acceptance or direct assignment.
+  created_at DateTime
+  
+  /// Timestamp of the most recent modification to this employee record,
+  /// including role changes, department reassignment, position updates,
+  /// employment type changes, and status transitions.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. When set, the employee record is considered
+  /// removed but retained for audit integrity. Set during organization
+  /// deletion cascades or account deletion cleanup.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member erp_hrm_members @relation(fields: [erp_hrm_member_id], references: [id], onDelete: Cascade)
+  role erp_hrm_roles @relation(fields: [erp_hrm_role_id], references: [id], onDelete: Cascade)
+  department erp_hrm_departments? @relation(fields: [erp_hrm_department_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  contracts erp_hrm_contracts[]
+  projectMembers erp_hrm_project_members[]
+  assignedTasks erp_hrm_tasks[]
+  timelogs erp_hrm_timelogs[]
+  timesheets erp_hrm_timesheets[]
+  timer erp_hrm_timers?
+  
+  //----
+  // INDEXES
+  //----
+  @@index([erp_hrm_role_id])
+  @@index([erp_hrm_department_id])
+  @@unique([erp_hrm_member_id, erp_hrm_organization_id])
+  @@index([erp_hrm_organization_id, status])
+  // spellchecker: ignore-next-line
+  @@index([erp_hrm_organization_id, erp_hrm_department_id], map: "erp_hrm_employees_erp_hrm_organization_id_erp_hrm_depa_4adb32ce")
+  @@index([erp_hrm_organization_id, employment_type])
+}
+
+/// Organizational department hierarchy within an organization, providing a
+/// purely structural grouping mechanism for employees.
+///
+/// Departments support a one-level parent-child nesting pattern: a
+/// department may have an optional parent department, and any department
+/// that serves as a parent to others cannot itself have a parent. This
+/// constraint is enforced at the application layer, not through
+/// database-level CHECK constraints.
+///
+/// Departments have no bearing on permissions or project access — they exist
+/// solely as a structural grouping for employees. When a department is
+/// deleted, affected employees have their department reference cleared
+/// without removing the employee records themselves. A department with
+/// children cannot be deleted until all child departments are either
+/// reassigned or deleted first.
+///
+/// Departments are scoped to an organization and visible to all employees
+/// within that organization regardless of role. Management operations
+/// (create, edit, delete) require the org:manage permission.
+///
+/// @namespace employee
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_hrm_departments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Self-reference establishing the parent-child department hierarchy.
+  ///
+  /// Nullable — a department without a parent is a top-level department. When
+  /// set, the referenced department must not itself have a parent, enforcing
+  /// the one-level nesting constraint. A department cannot reference itself as
+  /// its own parent, nor can it reference any of its own children, preventing
+  /// circular relationships.
+  ///
+  /// When a department with children is deleted, all child departments must be
+  /// reassigned or deleted first before the parent can be removed.
+  parent_id String?
+  
+  /// Reference to the organization this department belongs to.
+  ///
+  /// Each department is strictly scoped to a single organization as part of
+  /// the multi-tenancy data isolation model. All department operations are
+  /// bounded by the organization context.
+  erp_hrm_organization_id String
+  
+  /// Department display name.
+  ///
+  /// Required at creation time and must be unique within the organization.
+  /// Used for display in department listings, employee records, and
+  /// organizational hierarchy views.
+  name String
+  
+  /// Optional free-text description of the department's purpose or scope.
+  ///
+  /// Provides additional context for employees browsing the organizational
+  /// structure. May be updated independently of the department name.
+  description String?
+  
+  /// Timestamp when the department was created.
+  ///
+  /// Set automatically on creation and never modified thereafter.
+  created_at DateTime
+  
+  /// Timestamp of the most recent modification to the department record.
+  ///
+  /// Updated automatically whenever the department's name, description, or
+  /// parent relationship changes.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for data retention and recovery.
+  ///
+  /// When set, the department is considered deleted but its record is
+  /// preserved. Child departments must be reassigned or deleted before a
+  /// parent department can be soft-deleted.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  parent erp_hrm_departments? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  employees erp_hrm_employees[]
+  children erp_hrm_departments[] @relation("recursive")
+  
+  //----
+  // INDEXES
+  //----
+  @@index([parent_id])
+  @@unique([erp_hrm_organization_id, name])
+  @@index([erp_hrm_organization_id, parent_id])
+}
