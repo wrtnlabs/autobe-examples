@@ -1,0 +1,917 @@
+/// Central transaction record aggregating all line items, capturing buyer,
+/// financial totals, and overall fulfillment status including aggregate
+/// delivery milestones.
+///
+/// Orders represent the core purchase event in the ecommerce platform,
+/// linking a customer to their selected products via order items. Each order
+/// contains multiple items potentially from different sellers, with a
+/// combined total price and an overall fulfillment status derived from
+/// individual item statuses.
+///
+/// @namespace ecommerce_mall_orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_orders {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id @db.Uuid
+  
+  /// Links to the customer account that placed this order.
+  ///
+  /// This foreign key ensures orders can always be traced back to their
+  /// originating customer for order history and account management purposes.
+  ecommerce_mall_customer_id String @db.Uuid
+  
+  /// References the shipping address used for this order at checkout.
+  ///
+  /// This frozen address preserves the delivery destination even if the
+  /// customer later modifies their address book.
+  ecommerce_mall_shipping_address_id String @db.Uuid
+  
+  /// Total financial value of all order items combined.
+  ///
+  /// Calculated as the sum of all item prices at the time of checkout to
+  /// provide a snapshot of the order cost.
+  total_price Float @db.DoublePrecision
+  
+  /// Overall fulfillment state of the entire order.
+  ///
+  /// Values include: paid, shipped, delivered, cancelled, refunded,
+  /// partially_completed. This aggregate status is derived from the statuses
+  /// of individual order items.
+  status String
+  
+  /// Timestamp when the order was initially created.
+  created_at DateTime @db.Timestamptz
+  
+  /// Timestamp of the most recent order modification.
+  ///
+  /// Updated whenever order status changes or associated order items receive
+  /// updates such as payment confirmation, shipment dispatch, or refund
+  /// processing.
+  updated_at DateTime @db.Timestamptz
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  customer ecommerce_mall_customers @relation(fields: [ecommerce_mall_customer_id], references: [id], onDelete: Cascade)
+  shippingAddress ecommerce_mall_shipping_addresses @relation(fields: [ecommerce_mall_shipping_address_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  orderReviews ecommerce_mall_reviews[]
+  orderItems ecommerce_mall_order_items[]
+  shipments ecommerce_mall_shipments[]
+  orderRefundRequests ecommerce_mall_refund_requests[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([ecommerce_mall_shipping_address_id])
+  @@index([ecommerce_mall_customer_id, created_at])
+}
+
+/// Individual line items within an order, capturing purchased variant
+/// details and per-item fulfillment states.
+///
+/// Represents a specific quantity of a variant purchased in an order.
+/// Captures the snapshot of the variant's metadata at the time of purchase
+/// to ensure data immutability. Tracks independent fulfillment statuses
+/// (e.g., paid, shipped, delivered, cancelled, refunded) which aggregate
+/// into the total order status.
+///
+/// @namespace ecommerce_mall_orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_order_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id @db.Uuid
+  
+  /// Links the order item to the overarching transaction record in the order.
+  ecommerce_order_id String @db.Uuid
+  
+  /// Identifies the specific product variant (SKU) that was purchased.
+  ecommerce_product_variant_id String @db.Uuid
+  
+  /// Stores the seller ID at the time of purchase to provide historical
+  /// contact and storefront details for dispute resolution.
+  ecommerce_seller_id String @db.Uuid
+  
+  /// The title of the variant at the time of purchase.
+  purchased_variant_name String
+  
+  /// The Stock Keeping Unit identifier of the variant at the time of purchase.
+  purchased_sku String
+  
+  /// The unit price of the variant at the time the order was placed.
+  purchased_price Float @db.DoublePrecision
+  
+  /// The name of the shop/seller at the time of purchase.
+  purchased_seller_name String
+  
+  /// The specific option combinations (e.g., size, color) purchased as a
+  /// string.
+  purchased_options String
+  
+  /// The quantity of the variant included in the order.
+  quantity Int @db.Integer
+  
+  /// Current fulfillment status of the item (e.g., paid, shipped, delivered,
+  /// cancelled, refunded).
+  status String
+  
+  /// Record creation timestamp.
+  created_at DateTime @db.Timestamptz
+  
+  /// Record last update timestamp.
+  updated_at DateTime @db.Timestamptz
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  order ecommerce_mall_orders @relation(fields: [ecommerce_order_id], references: [id], onDelete: Cascade)
+  productVariant ecommerce_mall_product_variants @relation(fields: [ecommerce_product_variant_id], references: [id], onDelete: Cascade)
+  seller ecommerce_mall_sellers @relation(fields: [ecommerce_seller_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  shipmentItems ecommerce_mall_shipment_items[]
+  cancellationRequest ecommerce_mall_cancellation_requests?
+  itemRefundRequests ecommerce_mall_refund_requests[]
+  orderItemSnapshots ecommerce_mall_order_item_snapshots[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([ecommerce_order_id])
+  @@index([ecommerce_product_variant_id])
+  @@index([ecommerce_seller_id])
+}
+
+/// Logistics containers that bundle order items from a single seller into
+/// physical transport packages with carrier tracking and delivery status
+/// management.
+///
+/// Each shipment tracks the carrier selection, tracking number, dispatch
+/// timestamp, and delivery confirmation (including the 14-day
+/// auto-confirmation timer). The shipment acts as a physical fulfillment
+/// container, updating the status of all {@link ecommerce_mall_order_items}
+/// grouped within it from `paid` to `shipped` upon creation and to
+/// `delivered` upon confirmation.
+///
+/// Shipments are always managed through their parent {@link
+/// ecommerce_mall_orders} context, providing end-to-end visibility from
+/// seller dispatch to customer receipt.
+///
+/// @namespace ecommerce_mall_orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_shipments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id @db.Uuid
+  
+  /// The parent order this shipment fulfills.
+  ///
+  /// Links the logistics container to the customer purchase transaction,
+  /// ensuring every shipment can be traced back to its originating {@link
+  /// ecommerce_mall_orders} and the corresponding {@link
+  /// ecommerce_mall_order_items} bundled within it.
+  ecommerce_mall_order_id String @db.Uuid
+  
+  /// The seller responsible for packing and dispatching this shipment.
+  ///
+  /// Identifies the merchant who creates the shipment, selects the carrier,
+  /// and enters tracking information. Enables sellers to manage all their
+  /// outbound shipments from their shop dashboard.
+  ecommerce_mall_seller_id String @db.Uuid
+  
+  /// The delivery destination address for this shipment.
+  ///
+  /// References the customer's saved {@link ecommerce_mall_shipping_addresses}
+  /// entry used at checkout, ensuring the correct destination is displayed to
+  /// both seller and customer during transit.
+  ecommerce_mall_shipping_address_id String @db.Uuid
+  
+  /// Name of the shipping carrier or logistics company selected for this
+  /// shipment.
+  ///
+  /// Examples include domestic couriers, postal services, or specialized
+  /// freight companies. Used for customer notifications and delivery
+  /// expectation setting.
+  carrier_name String
+  
+  /// The carrier-issued tracking number for monitoring this shipment's transit
+  /// progress.
+  ///
+  /// Nullable — available only after the seller enters shipping details at
+  /// checkout. Used by customers to track packages and by the system to
+  /// auto-update statuses.
+  tracking_number String?
+  
+  /// Timestamp when the seller marked the shipment as dispatched.
+  ///
+  /// Triggers status transitions for all contained {@link
+  /// ecommerce_mall_order_items} to `shipped` and starts the 14-day
+  /// auto-confirmation countdown toward delivery.
+  shipped_at DateTime? @db.Timestamptz
+  
+  /// Projected delivery date calculated from carrier estimates.
+  ///
+  /// Used for customer notifications and setting delivery expectations.
+  /// Provides a reference point for the {@link ecommerce_mall_order_items}
+  /// delivery confirmation workflow.
+  estimated_delivery_at DateTime? @db.Timestamptz
+  
+  /// Timestamp confirming physical delivery of this shipment.
+  ///
+  /// Set either when the customer manually confirms receipt or auto-populated
+  /// by the 14-day delivery confirmation timer after {@link shipped_at}.
+  /// Transitioning {@link ecommerce_mall_order_items} to `delivered` and
+  /// enabling post-delivery review and refund workflows.
+  delivered_at DateTime? @db.Timestamptz
+  
+  /// Current fulfillment status of the shipment through the logistics cycle.
+  ///
+  /// Allowed values: `shipped` (seller dispatched), `in_transit` (en route),
+  /// `delivered` (confirmed by customer or auto-14-day timer). Drives the
+  /// status progression of all contained {@link ecommerce_mall_order_items}.
+  status String
+  
+  /// Record creation timestamp when the shipment was first generated.
+  created_at DateTime @db.Timestamptz
+  
+  /// Last modification timestamp when shipment data was last changed.
+  updated_at DateTime @db.Timestamptz
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  order ecommerce_mall_orders @relation(fields: [ecommerce_mall_order_id], references: [id], onDelete: Cascade)
+  seller ecommerce_mall_sellers @relation(fields: [ecommerce_mall_seller_id], references: [id], onDelete: Cascade)
+  // spellchecker: ignore-next-line
+  shippingAddress ecommerce_mall_shipping_addresses @relation(fields: [ecommerce_mall_shipping_address_id], references: [id], onDelete: Cascade, map: "ecommerce_mall_shipments_ecommerce_mall_shipping_addre_831d9231")
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  shipmentItems ecommerce_mall_shipment_items[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([ecommerce_mall_seller_id])
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_shipping_address_id], map: "ecommerce_mall_shipments_ecommerce_mall_shipping_addre_c98e8c48")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_order_id, ecommerce_mall_seller_id], map: "ecommerce_mall_shipments_ecommerce_mall_order_id_ecomm_322ec2b5")
+  @@index([tracking_number])
+  @@index([carrier_name(ops: raw("gin_trgm_ops"))], type: Gin)
+}
+
+/// Junction table mapping order items to shipment bundles, enabling partial
+/// fulfillment and complex multi-package order shipping. Each row represents
+/// a single order item included in a specific shipment container.
+///
+/// ### Core Purpose
+///
+/// Maps the many-to-many relationship between `{@link
+/// ecommerce_mall_order_items}` and `{@link ecommerce_mall_shipments}`,
+/// allowing a single order item to appear in multiple shipment bundles when
+/// a seller fulfills an order in multiple packages. This supports partial
+/// shipments, inventory splits, and carrier logistics optimizations.
+///
+/// ### Relationships
+///
+/// - Each row links exactly one order item to one shipment.
+/// - An `{@link ecommerce_mall_order_item}` may appear in zero or more
+/// shipments.
+/// - A `{@link ecommerce_mall_shipments}` may contain zero or more order
+/// items (or order items from multiple sellers).
+///
+/// ### Business Rules
+///
+/// - Duplicate (order item, shipment) pairs are prevented by unique constraint.
+/// - When an order item is marked canceled or refunded, the corresponding
+/// shipment item remains in the audit trail for historical accuracy.
+/// - Deletion cascades preserve referential integrity.
+///
+/// @namespace ecommerce_mall_orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_shipment_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id @db.Uuid
+  
+  /// References the order line item being fulfilled in this shipment bundle.
+  ///
+  /// An order item may be split across multiple shipment entries when a seller
+  /// ships an order in multiple packages.
+  ecommerce_mall_order_item_id String @db.Uuid
+  
+  /// References the shipment container that includes this order item for
+  /// physical delivery.
+  ///
+  /// Multiple order items from different sellers or the same seller can belong
+  /// to the same shipment.
+  ecommerce_mall_shipment_id String @db.Uuid
+  
+  /// Timestamp when this shipment item assignment was created.
+  created_at DateTime @db.Timestamptz
+  
+  /// Timestamp when this shipment item assignment was last updated.
+  updated_at DateTime @db.Timestamptz
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  orderItem ecommerce_mall_order_items @relation(fields: [ecommerce_mall_order_item_id], references: [id], onDelete: Cascade)
+  shipment ecommerce_mall_shipments @relation(fields: [ecommerce_mall_shipment_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_mall_order_item_id, ecommerce_mall_shipment_id], map: "ecommerce_mall_shipment_items_ecommerce_mall_order_ite_59fea53d")
+  @@index([ecommerce_mall_shipment_id])
+}
+
+/// Tracks customer pre-shipment cancellation requests for order items,
+/// managing the approval or rejection workflow before physical logistics are
+/// initiated.
+///
+/// This entity captures the specific justification provided by the buyer to
+/// halt the delivery of a particular line item and initiates the financial
+/// reversal process upon seller authorization. It ensures that the
+/// overarching order remains intact while isolating the affected item from
+/// the expected delivery pipeline.
+///
+/// The lifecycle is governed by a strict sequence of events requiring active
+/// seller intervention. Once initiated, the request enters a pending review
+/// phase where the seller evaluates the stated objection before taking final
+/// action. If approved, the transaction record is permanently altered and
+/// inventory is restored; if denied, the item remains in active fulfillment.
+///
+/// @namespace ecommerce_mall_orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_cancellation_requests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id @db.Uuid
+  
+  /// References the customer account that initiated the pre-shipment
+  /// withdrawal petition.
+  ///
+  /// Establishes the buyer's identity for buyer protection tracking and
+  /// ensures the request can be queried against user profiles during support
+  /// interactions.
+  customer_id String @db.Uuid
+  
+  /// References the specific line item within an order that is subject to the
+  /// cancellation petition.
+  ///
+  /// Establishes the exact product variant and quantity targeted for the
+  /// pre-shipment void, ensuring the financial rollback and inventory
+  /// restoration are perfectly mapped to the original commercial transaction.
+  order_item_id String @db.Uuid
+  
+  /// The textual justification provided by the buyer to halt the delivery of a
+  /// specific line item.
+  ///
+  /// Captures the exact objection rationale to inform the seller's approval or
+  /// rejection decision, supporting buyer protection policies and transparent
+  /// dispute resolution workflows.
+  reason String
+  
+  /// Current disposition state of the pre-shipment withdrawal petition.
+  ///
+  /// Tracks the workflow progression from initial submission to final
+  /// resolution, supporting states such as pending, approved, or rejected,
+  /// which dictates subsequent financial and logistical actions.
+  status String
+  
+  /// Timestamp recording when the cancellation petition was originally
+  /// submitted.
+  ///
+  /// Establishes the temporal baseline for the approval timeline and is
+  /// critical for auditing buyer protection windows and tracking request
+  /// velocity.
+  created_at DateTime @db.Timestamptz
+  
+  /// Timestamp recording the most recent modification to the petition record.
+  ///
+  /// Ensures accurate auditing of status transitions and seller review actions
+  /// during the approval lifecycle.
+  updated_at DateTime @db.Timestamptz
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  customer ecommerce_mall_customers @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  orderItem ecommerce_mall_order_items @relation(fields: [order_item_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  snapshot ecommerce_mall_cancellation_snapshots?
+  
+  //----
+  // INDEXES
+  //----
+  @@index([customer_id])
+  @@unique([order_item_id])
+  @@index([status])
+}
+
+/// Immutable audit table capturing specific approval and rejection decisions
+/// on {link ecommerce_mall_cancellation_requests}. Each record is a
+/// permanent log of which seller made the final decision, the outcome, and
+/// any accompanying reason to ensure full transparency for buyer protection
+/// policies and dispute resolution.
+///
+/// @namespace ecommerce_mall_orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_cancellation_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id @db.Uuid
+  
+  /// References the {link ecommerce_mall_cancellation_requests} for which this
+  /// decision was made. Each cancellation request has exactly one approval or
+  /// rejection decision, enforced by a unique constraint.
+  ecommerce_mall_cancellation_request_id String @db.Uuid
+  
+  /// References the {link ecommerce_mall_sellers} account holder who rendered
+  /// the final approval or rejection decision on the cancellation request.
+  decision_maker_id String @db.Uuid
+  
+  /// The seller's final verdict on the cancellation - values are either
+  /// `approved` to authorize the customer's cancellation or `rejected` to
+  /// maintain the order and fulfill it as original.
+  decision String
+  
+  /// Optional explanation provided by the seller justifying the approval or
+  /// rejection, visible in the buyer's order history for transparency.
+  reason String?
+  
+  /// Timestamp when this decision record was created, establishing the
+  /// point-in-time audit trail for the cancellation request resolution.
+  created_at DateTime @db.Timestamptz
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  // spellchecker: ignore-next-line
+  cancellationRequest ecommerce_mall_cancellation_requests @relation(fields: [ecommerce_mall_cancellation_request_id], references: [id], onDelete: Cascade, map: "ecommerce_mall_cancellation_snapshots_ecommerce_mall_c_22f49e31")
+  decisionMaker ecommerce_mall_sellers @relation(fields: [decision_maker_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([decision_maker_id])
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_mall_cancellation_request_id], map: "ecommerce_mall_cancellation_snapshots_ecommerce_mall_c_14ef170f")
+}
+
+/// Records 7-day post-delivery refund claims for order items, managing the
+/// approval workflow and financial status for resolved disputes.
+///
+/// Customers initiate claims within a 7-day window after order delivery,
+/// providing a reason and expected financial restitution. Sellers then
+/// review these claims, deciding whether to approve or reject the request.
+///
+/// @namespace ecommerce_mall_orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_refund_requests {
+  //----
+  // COLUMNS
+  //----
+  /// Unique identifier for each refund claim.
+  id String @id @db.Uuid
+  
+  /// Customer who initiated the refund request. Links to the identity of the
+  /// customer requesting financial restitution.
+  ecommerce_mall_customer_id String @db.Uuid
+  
+  /// Parent transaction containing the refund item. Establishes the
+  /// overarching order context for the dispute.
+  ecommerce_mall_order_id String @db.Uuid
+  
+  /// Target order line item being refunded. Ensures the refund targets exactly
+  /// one specific product variation and quantity purchased.
+  ecommerce_mall_order_item_id String @db.Uuid
+  
+  /// Seller responsible for reviewing the claim. Links to the merchant who
+  /// manages the product variant associated with the dispute.
+  ecommerce_mall_seller_id String @db.Uuid
+  
+  /// Explanation for the refund request. Captures buyer reasoning regarding
+  /// product damage, incorrect items, or dissatisfaction.
+  reason String
+  
+  /// Current workflow stage of the dispute. Tracks whether the request is
+  /// awaiting review (PENDING_REVIEW) or has been finalized by the seller
+  /// (APPROVED, REJECTED).
+  status String
+  
+  /// Total monetary value requested back for the specific order item.
+  /// Calculated based on the variant price and quantities purchased.
+  refund_amount Float @db.DoublePrecision
+  
+  /// Optional seller notes provided during approval or rejection. Documents
+  /// the merchant's rationale for the financial decision.
+  seller_comment String?
+  
+  /// When the seller finalized the refund decision. Marks the transition from
+  /// a pending dispute to a resolved financial event.
+  processed_at DateTime? @db.Timestamptz
+  
+  /// Timestamp when the refund request was created.
+  created_at DateTime @db.Timestamptz
+  
+  /// Timestamp of the most recent modification to the refund claim record.
+  updated_at DateTime @db.Timestamptz
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  ecommerceMallCustomer ecommerce_mall_customers @relation(fields: [ecommerce_mall_customer_id], references: [id], onDelete: Cascade)
+  ecommerceMallOrder ecommerce_mall_orders @relation(fields: [ecommerce_mall_order_id], references: [id], onDelete: Cascade)
+  // spellchecker: ignore-next-line
+  ecommerceMallOrderItem ecommerce_mall_order_items @relation(fields: [ecommerce_mall_order_item_id], references: [id], onDelete: Cascade, map: "ecommerce_mall_refund_requests_ecommerce_mall_order_it_5ab28f73")
+  ecommerceMallSeller ecommerce_mall_sellers @relation(fields: [ecommerce_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([ecommerce_mall_order_id])
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_order_item_id], map: "ecommerce_mall_refund_requests_ecommerce_mall_order_it_3866bb36")
+  @@index([ecommerce_mall_seller_id])
+  @@index([status])
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_customer_id, created_at], map: "ecommerce_mall_refund_requests_ecommerce_mall_customer_f92af943")
+}
+
+/// Immutable ledger documenting physical variant stock quantity changes
+/// automatically triggered by order placements, cancellations, and
+/// successful refunds.
+///
+/// Each record captures the delta ('quantity_change') that was applied to a
+/// specific product variant's stock level. Because it is append-only, the
+/// sum of these deltas determines the current available stock.
+///
+/// @namespace ecommerce_mall_orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_inventory_records {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id @db.Uuid
+  
+  /// References the specific product variant whose stock level this record
+  /// affects.
+  ///
+  /// Every inventory movement is attributed to exactly one variant.
+  ecommerce_mall_product_variant_id String @db.Uuid
+  
+  /// The signed integer amount added or subtracted from the variant's current
+  /// stock level.
+  ///
+  /// Positive values indicate restocks or returns, while negative values
+  /// indicate sales.
+  quantity_change Int @db.Integer
+  
+  /// The business event that triggered this inventory adjustment.
+  ///
+  /// Common reasons include order placements, customer cancellations, refund
+  /// approvals, or manual stock adjustments.
+  reason String
+  
+  /// Immutable timestamp for when the inventory adjustment was recorded.
+  ///
+  /// Mandatory on every model to trace when stock movements occurred.
+  created_at DateTime @db.Timestamptz
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  // spellchecker: ignore-next-line
+  variant ecommerce_mall_product_variants @relation(fields: [ecommerce_mall_product_variant_id], references: [id], onDelete: Cascade, map: "ecommerce_mall_inventory_records_ecommerce_mall_produc_aff102dd")
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_product_variant_id, created_at], map: "ecommerce_mall_inventory_records_ecommerce_mall_produc_19d25df6")
+}
+
+/// Stores customer shipping destination entries to facilitate checkout
+/// logistics and precise delivery routing.
+///
+/// This entity allows users to save multiple physical addresses linked to
+/// their account for streamlined future orders. It captures standard carrier
+/// requirements including recipient names, contact phone numbers, and
+/// geographically structured destination data. The table supports a default
+/// address mechanism using a primary flag to optimize the checkout
+/// experience.
+///
+/// @namespace ecommerce_mall_orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_shipping_addresses {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key identifier for the shipping address record.
+  id String @id @db.Uuid
+  
+  /// Links the shipping address to the specific customer who owns it.
+  ecommerce_mall_customer_id String @db.Uuid
+  
+  /// The full legal name of the recipient receiving the package.
+  recipient_name String
+  
+  /// Contact phone number of the recipient, required by courier services for
+  /// delivery coordination.
+  phone_number String
+  
+  /// Destination country of the shipping address.
+  country String
+  
+  /// Optional administrative division such as a state, province, or prefecture
+  /// used in domestic logistics.
+  state_province String?
+  
+  /// ZIP or postal code providing precise routing data for the destination
+  /// region.
+  postal_code String
+  
+  /// City or municipality where the delivery destination is located.
+  city String
+  
+  /// Detailed street, building, and apartment number for precise physical
+  /// routing.
+  street_address String
+  
+  /// Indicates whether this address is the customer's preferred default
+  /// shipping destination for the checkout flow.
+  is_primary Boolean
+  
+  /// Timestamp when the shipping address was first created.
+  created_at DateTime @db.Timestamptz
+  
+  /// Timestamp tracking the last time the shipping address details were
+  /// modified.
+  updated_at DateTime @db.Timestamptz
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  // spellchecker: ignore-next-line
+  customer ecommerce_mall_customers @relation(fields: [ecommerce_mall_customer_id], references: [id], onDelete: Cascade, map: "ecommerce_mall_shipping_addresses_ecommerce_mall_custo_9942381c")
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  orders ecommerce_mall_orders[]
+  shipments ecommerce_mall_shipments[]
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_mall_customer_id, is_primary], map: "ecommerce_mall_shipping_addresses_ecommerce_mall_custo_35591173")
+}
+
+/// Stores customer display names and phone numbers to streamline checkout
+/// personalization and facilitate contact during post-delivery support.
+///
+/// Acts as a subsidiary to {@link ecommerce_mall_customers}, managing
+/// editable personal details such as public-facing display names and
+/// telephone numbers required for platform interactions.
+///
+/// Captures immutable timestamps for tracking the creation and most recent
+/// updates to profile information.
+///
+/// @namespace ecommerce_mall_orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_customer_profiles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id @db.Uuid
+  
+  /// The {@link ecommerce_mall_customers|customer} whose profile this record
+  /// contains.
+  customer_id String @db.Uuid
+  
+  /// The time when this customer profile was created.
+  created_at DateTime @db.Timestamptz
+  
+  /// The public display name used in shop interactions, reviews, and order
+  /// details.
+  display_name String
+  
+  /// The contact telephone number used for logistics communication and
+  /// post-delivery support between customers and sellers.
+  phone_number String
+  
+  /// The time when this customer profile was last updated, including changes
+  /// to the display name or phone number.
+  updated_at DateTime @db.Timestamptz
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  customer ecommerce_mall_customers @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([customer_id])
+}
+
+/// A wishlist item records a specific product bookmarked by a customer for
+/// potential future purchase. This entity allows customers to save product
+/// listings they are interested in, enabling them to retrieve and add them
+/// back to their cart later.
+///
+/// The system enforces data integrity by preventing a customer from
+/// bookmarking the same product more than once, ensuring a clean and
+/// deduplicated wishlist experience. If a seller decides to remove a product
+/// from the marketplace, the corresponding entry in a customer's wishlist is
+/// automatically deleted to maintain referential integrity.
+///
+/// @namespace ecommerce_mall_orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_wishlist_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id @db.Uuid
+  
+  /// Foreign key to the {ecommerce_mall_customers} model. Identifies the owner
+  /// of the wishlist and links this bookmarked item to a specific registered
+  /// customer account.
+  ecommerce_customer_id String @db.Uuid
+  
+  /// Foreign key to the {ecommerce_mall_products} model. Identifies the
+  /// specific product listing bookmarked by the customer. When the associated
+  /// product is deleted by its seller, this record is automatically removed
+  /// via cascade deletion.
+  ecommerce_product_id String @db.Uuid
+  
+  /// Records the exact timestamp when the customer first added the product to
+  /// their wishlist.
+  created_at DateTime @db.Timestamptz
+  
+  /// Records the timestamp of the last update to this wishlist record.
+  updated_at DateTime @db.Timestamptz
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  customer ecommerce_mall_customers @relation(fields: [ecommerce_customer_id], references: [id], onDelete: Cascade)
+  product ecommerce_mall_products @relation(fields: [ecommerce_product_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([ecommerce_product_id])
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_customer_id, ecommerce_product_id], map: "ecommerce_mall_wishlist_items_ecommerce_customer_id_ec_8f1ba1bd")
+}
+
+/// Immutable audit table recording state transitions of order items,
+/// capturing before-and-after JSON snapshots of variant data and status
+/// changes for dispute resolution.
+///
+/// ### Core Record
+/// Captures the state of a specific `{@link ecommerce_mall_order_items}`
+/// record before and after critical fulfillment events. Every change in
+/// status or item property generates a new entry to preserve historical
+/// context.
+///
+/// ### Dispute Resolution
+/// Stores `payload_before` and `payload_after` as JSON strings to ensure the
+/// exact state of a purchased variant is always retrievable. This is
+/// essential for customer disputes, refund claims, and delivery confirmation
+/// timelines.
+///
+/// ### Event Tracking
+/// Groups transitions by specific event types (e.g., `paid`, `shipped`,
+/// `cancelled`, `refunded`) to allow administrators and customers to filter
+/// the exact sequence of fulfillment milestones.
+///
+/// @namespace ecommerce_mall_orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_order_item_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id @db.Uuid
+  
+  /// Foreign key linking the snapshot record to the specific `{@link
+  /// ecommerce_mall_order_items}`.
+  ///
+  /// Tracks fulfillment lifecycle changes, including payment confirmations,
+  /// shipment dispatches, delivery confirmations, cancellations, and refund
+  /// approvals.
+  ecommerce_mall_order_item_id String @db.Uuid
+  
+  /// Describes the exact nature of the event that triggered this state
+  /// transition.
+  ///
+  /// Examples include `order_placed`, `paid`, `shipped`, `delivered`,
+  /// `cancelled`, and `refunded`. Essential for filtering and auditing
+  /// specific fulfillment milestones.
+  event_type String
+  
+  /// The exact status of the linked order item immediately before the
+  /// transition.
+  ///
+  /// Used alongside `current_status` to track the precise sequence of
+  /// fulfillment changes and establish a clear audit trail.
+  previous_status String
+  
+  /// The resulting status of the linked order item immediately following the
+  /// transition.
+  ///
+  /// Represents the resolved state that dictates subsequent actions, such as
+  /// shipment dispatch or return eligibility.
+  current_status String
+  
+  /// JSON string containing the complete state of the order item prior to the
+  /// event.
+  ///
+  /// Explicitly preserved as a JSON string per user requirements to allow
+  /// dispute resolution with exact pre-event data.
+  payload_before String?
+  
+  /// JSON string containing the complete state of the order item after the
+  /// event.
+  ///
+  /// Captures the new variant details, updated price, adjusted quantity, and
+  /// finalized status. Serves as the immutable reference for post-event
+  /// inquiries.
+  payload_after String?
+  
+  /// Optional JSON string storing supplementary contextual data about the
+  /// transition.
+  ///
+  /// May include timestamps for carrier handoffs, dispute resolution notes, or
+  /// financial transaction IDs.
+  metadata String?
+  
+  /// Records the precise timestamp when this snapshot record was generated.
+  ///
+  /// Required for ordering the chronological sequence of order item state
+  /// transitions.
+  created_at DateTime @db.Timestamptz
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  // spellchecker: ignore-next-line
+  orderItem ecommerce_mall_order_items @relation(fields: [ecommerce_mall_order_item_id], references: [id], onDelete: Cascade, map: "ecommerce_mall_order_item_snapshots_ecommerce_mall_ord_0cff6308")
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_order_item_id, created_at], map: "ecommerce_mall_order_item_snapshots_ecommerce_mall_ord_8204725c")
+  @@index([event_type])
+}

@@ -1,0 +1,299 @@
+/// Tracks shopping cart line items containing variant references,
+/// quantities, and prices at time of addition.
+///
+/// This table manages the individual line items within a customer's shopping
+/// cart. Each record represents a specific product variant added to the
+/// cart, capturing the quantity selected and the exact unit price at the
+/// moment of addition. The design enforces a maximum of one line item per
+/// variant per customer to allow for easy quantity adjustments instead of
+/// duplicate entries.
+///
+/// @namespace ecommerce_mall_shop
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_cart_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id @db.Uuid
+  
+  /// Links the cart item to the customer who added it to their cart.
+  ///
+  /// Every line item must belong to a specific authenticated customer account
+  /// to ensure cart data is isolated and correctly associated with the user
+  /// during checkout.
+  ecommerce_mall_customer_id String @db.Uuid
+  
+  /// References the specific product variant (SKU) selected for this cart line.
+  ///
+  /// Ensures that customers can only add valid, existing product variants to
+  /// their shopping cart.
+  ecommerce_mall_product_variant_id String @db.Uuid
+  
+  /// The number of units of the selected variant placed in the cart.
+  ///
+  /// Users can add items multiple times, but the system merges them into a
+  /// single record with an incremented quantity count rather than creating
+  /// duplicate rows.
+  quantity Int @db.Integer
+  
+  /// The exact price of the product variant at the time it was added to the
+  /// cart.
+  ///
+  /// Storing this historical price prevents discrepancies if the product price
+  /// changes later, ensuring the customer is charged the amount they agreed to
+  /// during checkout.
+  unit_price Float @db.DoublePrecision
+  
+  /// Timestamp indicating when this line item was initially added to the cart.
+  created_at DateTime @db.Timestamptz
+  
+  /// Timestamp tracking the last modification made to this cart line, such as
+  /// quantity adjustments.
+  updated_at DateTime @db.Timestamptz
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  customer ecommerce_mall_customers @relation(fields: [ecommerce_mall_customer_id], references: [id], onDelete: Cascade)
+  // spellchecker: ignore-next-line
+  productVariant ecommerce_mall_product_variants @relation(fields: [ecommerce_mall_product_variant_id], references: [id], onDelete: Cascade, map: "ecommerce_mall_cart_items_ecommerce_mall_product_varia_ae8defd3")
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_product_variant_id], map: "ecommerce_mall_cart_items_ecommerce_mall_product_varia_26d98cb2")
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_mall_customer_id, ecommerce_mall_product_variant_id], map: "ecommerce_mall_cart_items_ecommerce_mall_customer_id_e_c0163abd")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_customer_id, created_at], map: "ecommerce_mall_cart_items_ecommerce_mall_customer_id_c_33977101")
+}
+
+/// Stores customer bookmarked products allowing them to save items for
+/// future purchase consideration.
+///
+/// The table serves as a mapping between {@link ecommerce_mall_customers}
+/// and {@link ecommerce_mall_products}. It ensures that each customer can
+/// bookmark a specific product only once by implementing a composite unique
+/// constraint on the customer and product foreign keys.
+///
+/// @namespace ecommerce_mall_shop
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_wishlists {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the wishlist entry.
+  id String @id @db.Uuid
+  
+  /// Identifier linking to the authenticated {@link ecommerce_mall_customers}
+  /// who bookmarked the product.
+  ///
+  /// A customer cannot have duplicate entries for the same product. If a
+  /// customer account is deleted, all associated wishlist entries are
+  /// automatically removed.
+  ecommerce_customer_id String @db.Uuid
+  
+  /// Identifier linking to the {@link ecommerce_mall_products} bookmarked by
+  /// the customer.
+  ///
+  /// If the product is removed from the marketplace, the corresponding
+  /// wishlist entry is automatically destroyed to prevent broken references.
+  ecommerce_product_id String @db.Uuid
+  
+  /// Timestamp capturing when a customer initially added the product to their
+  /// wishlist.
+  created_at DateTime @db.Timestamptz
+  
+  /// Timestamp capturing the most recent modification associated with this
+  /// wishlist entry.
+  updated_at DateTime @db.Timestamptz
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  customer ecommerce_mall_customers @relation(fields: [ecommerce_customer_id], references: [id], onDelete: Cascade)
+  product ecommerce_mall_products @relation(fields: [ecommerce_product_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([ecommerce_product_id])
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_customer_id, ecommerce_product_id], map: "ecommerce_mall_wishlists_ecommerce_customer_id_ecommer_6117fe10")
+}
+
+/// Records customer evaluations and ratings for delivered products,
+/// logically linking a specific order transaction back to the purchased
+/// product. This table captures the definitive outcome of completed
+/// transactions by storing standardized quantitative scores and qualitative
+/// commentary. It ensures that each customer can submit exactly one review
+/// per product per order, preserving historical purchasing experiences while
+/// preventing duplicate feedback for the same transactional event.
+///
+/// ### Field Details
+///
+/// {id} primary key identifier.
+///
+/// {customer_id} foreign key link to the authenticated user who authored
+/// this evaluation, enabling access to the buyer's dedicated review history
+/// page.
+///
+/// {order_id} foreign key anchor to the specific checkout transaction that
+/// contained the purchased variant, ensuring traceability back to the sales
+/// record.
+///
+/// {product_id} foreign key reference to the product listing being
+/// evaluated, serving as the central aggregation point for reviews displayed
+/// on the product detail page.
+///
+/// {rating} integer score from 1 to 5, providing a standardized, quantified
+/// measure of the customer's experience that powers product summary
+/// averages.
+///
+/// {text} optional free-form commentary, capturing detailed qualitative
+/// feedback, pros, cons, or usage tips left by the reviewer.
+///
+/// {created_at} timestamp marking the exact moment the evaluation was
+/// initially published to the platform.
+///
+/// {updated_at} timestamp recording the final modification made to the
+/// review, facilitating auditability for dispute resolution.
+///
+/// @namespace ecommerce_mall_shop
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_reviews {
+  //----
+  // COLUMNS
+  //----
+  /// Database primary key.
+  id String @id @db.Uuid
+  
+  /// References a {ecommerce_mall_customers} account.
+  ///
+  /// Stores the unique identifier of the purchaser who authored the
+  /// evaluation. This foreign key enables the system to aggregate a buyer's
+  /// public commentary and rating history across their account profile.
+  customer_id String @db.Uuid
+  
+  /// References a {ecommerce_mall_orders} transaction.
+  ///
+  /// Binds the evaluation directly to the specific purchase order that
+  /// triggered the eligibility to write a review. This ensures the platform
+  /// can verify whether the goods were genuinely acquired and delivered before
+  /// allowing the feedback to be published.
+  order_id String @db.Uuid
+  
+  /// References a {ecommerce_mall_products} listing.
+  ///
+  /// Attaches the feedback to the exact product catalog entry being assessed.
+  /// This reference acts as the primary join key for storefronts, powering the
+  /// review widget and enabling customers to quickly view community opinions
+  /// on the item they are browsing.
+  product_id String @db.Uuid
+  
+  /// Stores a standardized numerical score between 1 and 5 to quantify the
+  /// purchaser's satisfaction.
+  ///
+  /// This field provides a highly queryable attribute for product ranking
+  /// algorithms and storefront display, allowing aggregated averages to be
+  /// mathematically computed across multiple review records.
+  rating Int @db.Integer
+  
+  /// Captures optional free-form written commentary from the customer.
+  ///
+  /// This field enables rich qualitative feedback, allowing purchasers to
+  /// detail their experience, note product flaws, or highlight features. Its
+  /// nullable state ensures that customers can submit a numerical rating even
+  /// if they do not wish to write a full textual evaluation.
+  text String?
+  
+  /// Records the timestamp when the evaluation was originally submitted.
+  ///
+  /// This immutable timestamp serves as the primary chronological marker for
+  /// displaying reviews on product pages and generating historical activity
+  /// reports.
+  created_at DateTime @db.Timestamptz
+  
+  /// Records the timestamp of the final modification made to the review.
+  ///
+  /// This temporal marker facilitates audit trails and dispute resolution
+  /// workflows by indicating the precise moment any content adjustments were
+  /// applied after the initial publication.
+  updated_at DateTime @db.Timestamptz
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  customer ecommerce_mall_customers @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  order ecommerce_mall_orders @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  product ecommerce_mall_products @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  snapshots ecommerce_mall_reviews_snapshots[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([order_id])
+  @@unique([customer_id, order_id, product_id])
+  @@index([customer_id, created_at])
+  @@index([product_id, created_at])
+}
+
+/// Immutable audit table capturing the full state of a review at specific
+/// points in time to preserve review history for dispute resolution and
+/// auditing.
+///
+/// Whenever a customer creates a new review or edits an existing review, a
+/// snapshot is automatically recorded. This ensures that even if a review is
+/// modified or deleted, the exact content (rating and feedback) as it
+/// existed at that timestamp is preserved for administrative review.
+///
+/// @namespace ecommerce_mall_shop
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_reviews_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id @db.Uuid
+  
+  /// References the specific review record in `ecommerce_mall_reviews` that
+  /// this snapshot belongs to.
+  ///
+  /// A single review can have multiple snapshots to represent its version
+  /// history.
+  ecommerce_mall_review_id String @db.Uuid
+  
+  /// The customer's numerical rating (e.g., 1 to 5 stars) exactly as it was
+  /// recorded at the time this snapshot was created.
+  rating Int @db.Integer
+  
+  /// The customer's written review text or feedback exactly as it was stored
+  /// when this snapshot occurred.
+  body String?
+  
+  /// Records the precise date and time when this specific version or snapshot
+  /// of the review was generated.
+  created_at DateTime @db.Timestamptz
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  review ecommerce_mall_reviews @relation(fields: [ecommerce_mall_review_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_review_id, created_at], map: "ecommerce_mall_reviews_snapshots_ecommerce_mall_review_8d2dff23")
+}

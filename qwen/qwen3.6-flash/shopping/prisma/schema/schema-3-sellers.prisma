@@ -1,0 +1,289 @@
+/// Table that tracks the overall lifecycle and status of a seller's
+/// registration application for the e-commerce platform.
+///
+/// Records the progression from initial application to final administrative
+/// decisions. Maintains key state flags such as the vetting status (pending,
+/// approved, rejected) and suspension states. This table acts as the central
+/// hub for onboarding merchants, ensuring all registrations undergo the
+/// required platform review process before becoming active sellers.
+///
+/// @namespace ecommerce_mall_sellers
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_seller_approvals {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id @db.Uuid
+  
+  /// References the e-commerce seller account that this registration
+  /// application is attempting to activate or manage.
+  ///
+  /// Forces a strict 1:1 relationship where a single seller identity is
+  /// associated with at most one active or recent approval request. This
+  /// prevents duplicate applications for the same merchant and ensures a
+  /// single source of truth regarding the seller's onboarding status.
+  ecommerce_mall_sellers_id String? @db.Uuid
+  
+  /// The current vetting status of the seller's application.
+  ///
+  /// Tracks the administrative progression of the registration request,
+  /// typically moving from "pending" through a review phase. Final states
+  /// include "approved" (ready for active selling) or "rejected" (denied by
+  /// platform administrators).
+  status String
+  
+  /// The detailed reason provided by the administrator if the seller's
+  /// registration application was rejected.
+  ///
+  /// Captures the feedback loop between the platform's governance system and
+  /// the merchant. This field is null until a rejection occurs, and ensures
+  /// sellers understand the specific compliance or policy reasons for the
+  /// denial.
+  rejection_reason String?
+  
+  /// A boolean flag indicating if the seller's account or registration has
+  /// been temporarily suspended.
+  ///
+  /// Applied by administrators to halt a seller's activity or block further
+  /// reviews if the platform detects policy violations or suspicious behavior
+  /// during the approval process.
+  is_suspended Boolean
+  
+  /// The timestamp recording when the application request was initially
+  /// created.
+  ///
+  /// Tracks the entry point of the registration process, indicating how long
+  /// an application has spent in the queue or under active review.
+  created_at DateTime @db.Timestamptz
+  
+  /// The timestamp recording the last update to any application metadata or
+  /// state changes.
+  ///
+  /// Tracks the chronological progression of the request, helping
+  /// administrators determine the recency of recent status transitions or
+  /// administrative actions.
+  updated_at DateTime @db.Timestamptz
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  seller ecommerce_mall_sellers? @relation(fields: [ecommerce_mall_sellers_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  histories ecommerce_mall_seller_approval_histories[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([ecommerce_mall_sellers_id])
+  @@index([status])
+}
+
+/// Storefront metadata representing the public-facing identity of a seller
+/// on the marketplace.
+///
+/// Stores the shop name, descriptive details, and logo image URL that
+/// customers browse when viewing seller pages.
+///
+/// Linked exclusively to one `ecommerce_mall_sellers` account via a 1:1
+/// relationship.
+///
+/// @namespace ecommerce_mall_sellers
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_seller_profiles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id @db.Uuid
+  
+  /// Links the storefront profile to the corresponding seller authentication
+  /// account.
+  ///
+  /// Enforces a strict 1:1 relationship ensuring one profile per registered
+  /// seller.
+  ecommerce_mall_sellers_id String @db.Uuid
+  
+  /// The official business name displayed publicly on the seller's storefront.
+  ///
+  /// Used for storefront navigation and category search results.
+  shop_name String
+  
+  /// A free-text description of the seller's business or product offerings.
+  ///
+  /// Displayed prominently on the storefront for customer discovery.
+  shop_description String
+  
+  /// URI to the primary shop logo image file.
+  ///
+  /// Rendered on storefront headers and catalog search results.
+  logo_url String @db.VarChar(80000)
+  
+  /// Timestamp when the storefront profile was first created.
+  created_at DateTime @db.Timestamptz
+  
+  /// Timestamp of the most recent storefront metadata modification.
+  ///
+  /// Tracks changes prior to the snapshot log.
+  updated_at DateTime @db.Timestamptz
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  seller ecommerce_mall_sellers @relation(fields: [ecommerce_mall_sellers_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([ecommerce_mall_sellers_id])
+}
+
+/// Immutable audit records capturing the state of a seller profile at the
+/// time of every storefront edit for dispute resolution and historical
+/// auditing.
+///
+/// By capturing the exact shop name, shop description, and logo URL before
+/// any administrative or merchant changes occur, the platform can
+/// objectively verify what information was publicly displayed during a
+/// specific period. This ensures full transparency in customer-seller
+/// interactions and resolves potential disputes regarding storefront
+/// modifications or branding.
+///
+/// This append-only ledger tracks the chronological evolution of merchant
+/// storefronts, enabling platform administrators and customers to review the
+/// complete history of profile updates without altering the original
+/// business records.
+///
+/// @namespace ecommerce_mall_sellers
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_seller_profile_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for unique identification of each profile state record.
+  ///
+  /// Used internally to index immutable snapshots efficiently without relying
+  /// on timestamps or business attributes.
+  id String @id @db.Uuid
+  
+  /// Reference to the seller whose storefront details are being permanently
+  /// recorded in this snapshot.
+  ///
+  /// This foreign key maps the immutable historical record back to the active
+  /// `ecommerce_mall_sellers` account, preserving the lineage between the
+  /// business owner and their verified storefront history.
+  ecommerce_mall_seller_id String @db.Uuid
+  
+  /// The public display name of the storefront as captured at the moment of
+  /// this snapshot.
+  ///
+  /// Freezing the shop name guarantees that historical data reflects the exact
+  /// branding customers interacted with, preventing retrospective disputes
+  /// over past store identities.
+  shop_name String
+  
+  /// The detailed business description associated with the storefront at the
+  /// time of this snapshot.
+  ///
+  /// Storing the exact description text allows the system to audit marketing
+  /// claims, service terms, or business information that were active during
+  /// any recorded historical interval.
+  shop_description String
+  
+  /// The web address pointing to the storefront's official branding image as
+  /// configured when this snapshot was generated.
+  ///
+  /// Persisting the URI ensures that the visual identity and assets displayed
+  /// to customers at that specific point in time are permanently retrievable
+  /// for verification.
+  logo_url String @db.VarChar(80000)
+  
+  /// Timestamp recording the exact moment this specific storefront iteration
+  /// was securely locked as part of the historical ledger.
+  ///
+  /// Acts as the definitive point-in-time marker for chronological auditing,
+  /// dispute resolution, and reconstructing sequential storefront evolution.
+  created_at DateTime @db.Timestamptz
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  // spellchecker: ignore-next-line
+  seller ecommerce_mall_sellers @relation(fields: [ecommerce_mall_seller_id], references: [id], onDelete: Cascade, map: "ecommerce_mall_seller_profile_snapshots_ecommerce_mall_1d69440e")
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_seller_id, created_at], map: "ecommerce_mall_seller_profile_snapshots_ecommerce_mall_d879ecd9")
+}
+
+/// Immutable audit table capturing administrative actions on seller
+/// approvals, such as approval, rejection, or suspension. Links actions to
+/// specific seller approval requests and the responsible administrators.
+///
+///
+/// This table serves as a permanent ledger of all approval decision reviews,
+/// ensuring full transparency for seller account lifecycle management. Each
+/// new administrative action creates a new record in this history log
+/// without altering previous entries.
+///
+/// @namespace ecommerce_mall_sellers
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_seller_approval_histories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id @db.Uuid
+  
+  /// The seller approval request entry that this administrative action was
+  /// performed on.
+  ///
+  ///
+  /// Links the history step back to the actual seller account registration or
+  /// status review being acted upon.
+  ecommerce_mall_seller_approvals_id String @db.Uuid
+  
+  /// The administrator who executed this action.
+  ///
+  ///
+  /// Identifies the platform staff member (admin) responsible for the
+  /// approval, rejection, or suspension decision recorded in this audit log.
+  ecommerce_mall_admin_id String @db.Uuid
+  
+  /// The specific administrative action performed on the seller's status.
+  action String
+  
+  /// Optional text explaining the reason for the administrative action,
+  /// commonly used for rejection notices.
+  reason String?
+  
+  /// Timestamp of when this administrative action was recorded in the audit
+  /// log.
+  created_at DateTime @db.Timestamptz
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  // spellchecker: ignore-next-line
+  approval ecommerce_mall_seller_approvals @relation(fields: [ecommerce_mall_seller_approvals_id], references: [id], onDelete: Cascade, map: "ecommerce_mall_seller_approval_histories_ecommerce_mal_f5d78a15")
+  // spellchecker: ignore-next-line
+  adminReviewer ecommerce_mall_admins @relation(fields: [ecommerce_mall_admin_id], references: [id], onDelete: Cascade, map: "ecommerce_mall_seller_approval_histories_ecommerce_mal_819b4471")
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_admin_id, created_at], map: "ecommerce_mall_seller_approval_histories_ecommerce_mal_23c07a87")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_seller_approvals_id, created_at], map: "ecommerce_mall_seller_approval_histories_ecommerce_mal_6bb4e7a2")
+}

@@ -1,0 +1,475 @@
+/// Hierarchical marketplace groupings allowing parent-child relationships
+/// for catalog navigation.
+///
+/// Categories facilitate a strict two-level hierarchy where subcategories
+/// reference their parent via the ecommerce_mall_categories_id foreign key.
+/// This structure is strictly enforced to prevent overly deep nesting while
+/// enabling efficient product filtering within {@link
+/// ecommerce_mall_products} and storefront browsing.
+///
+/// The table supports soft deletes to maintain historical integrity during
+/// product catalog restructuring. Administrators exclusively create and
+/// manage these groupings, ensuring that taxonomy adjustments do not disrupt
+/// active checkout transactions or order fulfillment processes.
+///
+/// @namespace ecommerce_mall_catalog
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id @db.Uuid
+  
+  /// Reference to the parent category.
+  ///
+  /// For top-level root categories without a parent, this field remains null.
+  /// Establishing this self-referencing relationship allows the catalog to
+  /// expand hierarchically without creating circular dependencies outside the
+  /// table.
+  ecommerce_mall_categories_id String? @db.Uuid
+  
+  /// The name of the category displayed in navigation menus and product
+  /// filters.
+  name String
+  
+  /// Optional text providing details about the category's purpose or contents.
+  description String?
+  
+  /// Timestamp indicating when the category record was created.
+  created_at DateTime @db.Timestamptz
+  
+  /// Timestamp indicating when the category details were last modified.
+  updated_at DateTime @db.Timestamptz
+  
+  /// Timestamp marking the category for soft deletion, preserving historical
+  /// references during product catalog audits.
+  deleted_at DateTime? @db.Timestamptz
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  parentCategory ecommerce_mall_categories? @relation("recursive", fields: [ecommerce_mall_categories_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  childCategories ecommerce_mall_categories[] @relation("recursive")
+  products ecommerce_mall_products[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([ecommerce_mall_categories_id, name])
+  @@index([name])
+  @@index([deleted_at])
+}
+
+/// Marketplace product listings including base name, description, pricing,
+/// and seller association.
+///
+/// This table represents the core catalog entries that sellers can create,
+/// edit, manage, and remove. It establishes the primary relationship between
+/// a seller and their offerings while categorizing products for storefront
+/// navigation. Each record is designed to trigger snapshot history tracking
+/// upon every modification to maintain an immutable audit trail for dispute
+/// resolution.
+///
+/// @namespace ecommerce_mall_catalog
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_products {
+  //----
+  // COLUMNS
+  //----
+  /// Unique identifier for the product.
+  id String @id @db.Uuid
+  
+  /// References the seller who owns this product listing.
+  ///
+  /// Establishes the fundamental ownership relationship, ensuring that only
+  /// authorized sellers can manage their own product data. Products are
+  /// automatically removed from the marketplace storefront when a seller
+  /// account is deactivated or deleted.
+  ecommerce_mall_seller_id String @db.Uuid
+  
+  /// References the hierarchical category to which this product belongs.
+  ///
+  /// Enables storefront navigation and browsing capabilities by linking
+  /// products to the platform's taxonomy. Categories support subcategories,
+  /// allowing for structured catalog organization and filtering.
+  ecommerce_mall_category_id String @db.Uuid
+  
+  /// The official display title of the product.
+  ///
+  /// Optimized for full-text search capabilities, allowing customers to
+  /// quickly locate items. It should be concise yet descriptive to optimize
+  /// storefront usability and search algorithm precision.
+  name String
+  
+  /// Detailed textual description of the product, including features,
+  /// specifications, and usage instructions.
+  ///
+  /// Supports flexible data types to accommodate rich formatting. This field
+  /// is mutable and triggers history tracking when modified to preserve
+  /// accurate product information for past orders.
+  description String?
+  
+  /// The default monetary value of the product before any variant-specific
+  /// pricing adjustments.
+  ///
+  /// Acts as the baseline for storefront display and price-range filtering.
+  /// Actual selling prices may be overridden by specific {@link
+  /// ecommerce_mall_product_variants}.
+  base_price Float @db.DoublePrecision
+  
+  /// Defines the storefront visibility status of the product.
+  ///
+  /// When set to false, the product is hidden from browse, search, and
+  /// category views but remains in the database for historical and audit
+  /// purposes. Automatically enforced upon product removal operations.
+  is_active Boolean
+  
+  /// Timestamp recording when the product listing was initially created.
+  ///
+  /// Required for chronological ordering and sorting operations across the
+  /// marketplace catalog.
+  created_at DateTime @db.Timestamptz
+  
+  /// Timestamp recording the most recent modification time of the product
+  /// listing.
+  ///
+  /// Automatically updated on every record mutation, enabling efficient
+  /// tracking of active changes.
+  updated_at DateTime @db.Timestamptz
+  
+  /// Timestamp recording when the product was soft-deleted by the seller or
+  /// administrator.
+  ///
+  /// Enables graceful removal from public listings while preserving historical
+  /// reference data and associated snapshots.
+  deleted_at DateTime? @db.Timestamptz
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  seller ecommerce_mall_sellers @relation(fields: [ecommerce_mall_seller_id], references: [id], onDelete: Cascade)
+  category ecommerce_mall_categories @relation(fields: [ecommerce_mall_category_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  productImages ecommerce_mall_product_images[]
+  variants ecommerce_mall_product_variants[]
+  wishlistEntries ecommerce_mall_wishlists[]
+  productReviews ecommerce_mall_reviews[]
+  wishlistItems ecommerce_mall_wishlist_items[]
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_category_id, base_price], map: "ecommerce_mall_products_ecommerce_mall_category_id_bas_863abc1a")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_category_id, is_active], map: "ecommerce_mall_products_ecommerce_mall_category_id_is__e673bfc5")
+  @@index([created_at])
+  @@index([ecommerce_mall_seller_id, created_at])
+  @@index([name(ops: raw("gin_trgm_ops"))], type: Gin)
+}
+
+/// Stores multiple image attachments for marketplace products, designating
+/// one image as the main thumbnail for list views while preserving
+/// historical image states for snapshot auditing.
+///
+/// This model enables sellers to manage a gallery of product photos,
+/// ensuring that primary images serve as system-wide thumbnails for browsing
+/// and search. Image changes are linked to the parent {@link
+/// ecommerce_mall_products} via the foreign key, and every creation or
+/// deletion is captured as an immutable record in the {@link
+/// ecommerce_mall_snapshots} table for dispute resolution and historical
+/// auditing.
+///
+/// @namespace ecommerce_mall_catalog
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_product_images {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id @db.Uuid
+  
+  /// Links the image asset to its parent marketplace product, enforcing that
+  /// images are managed exclusively through the product catalog. Every image
+  /// modification or removal is audited by creating a corresponding entry in
+  /// the {@link ecommerce_mall_snapshots} table.
+  ecommerce_mall_product_id String @db.Uuid
+  
+  /// The direct URL or HTTP/HTTPS link to the hosted image asset.
+  image_url String @db.VarChar(80000)
+  
+  /// Designates the image as the main thumbnail displayed in product listings
+  /// and search result cards.
+  is_primary Boolean
+  
+  /// Assigns the visual priority of the image within the product gallery,
+  /// ensuring the primary thumbnail appears first during catalog browsing.
+  sort_order Int @db.Integer
+  
+  /// Timestamp when the image record was initially created in the database.
+  created_at DateTime @db.Timestamptz
+  
+  /// Timestamp of the most recent modification to this image record.
+  updated_at DateTime @db.Timestamptz
+  
+  /// Timestamp when the image was soft-deleted by the seller. Retains the
+  /// record in the database to preserve catalog history and allow audit
+  /// recovery.
+  deleted_at DateTime? @db.Timestamptz
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  product ecommerce_mall_products @relation(fields: [ecommerce_mall_product_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_product_id, sort_order], map: "ecommerce_mall_product_images_ecommerce_mall_product_i_c02fae18")
+}
+
+/// Stock-keeping-unit configurations containing specific options, SKUs,
+/// availability status, and price overrides.
+///
+/// Each distinct product variation functions as an independently orderable
+/// unit with its own inventory count and pricing, while logically belonging
+/// to its parent product defined by {@link ecommerce_mall_products}.
+///
+/// @namespace ecommerce_mall_catalog
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_product_variants {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id @db.Uuid
+  
+  /// Identifies the parent product listing this variant belongs to.
+  ///
+  /// Variants are strictly managed through {@link ecommerce_mall_products} and
+  /// cannot exist independently as they represent distinct permutations of the
+  /// parent item.
+  ecommerce_mall_product_id String @db.Uuid
+  
+  /// Unique stock-keeping-unit code identifying this specific variant across
+  /// the catalog.
+  ///
+  /// Sellers use this alphanumeric identifier for inventory tracking and order
+  /// fulfillment, ensuring it is unique within the context of its parent
+  /// {@link ecommerce_mall_products}.
+  sku_code String
+  
+  /// Monetary price assigned specifically to this variant, overriding the
+  /// parent product's base price when a specific variant requires a cost
+  /// adjustment for options or material differences.
+  price Float @db.DoublePrecision
+  
+  /// Current available quantity of this specific variant in the warehouse.
+  ///
+  /// Automatically decremented upon successful order placement and restored
+  /// during cancellations or refunds via {@link
+  /// ecommerce_mall_inventory_records}.
+  stock_quantity Int @db.Integer
+  
+  /// Defines the current availability status of the variant (e.g., available,
+  /// unavailable).
+  ///
+  /// Directly impacts the visibility of the variant in product search results
+  /// and prevents adding out-of-stock variants to carts.
+  status String
+  
+  /// Timestamp recording when this variant configuration was initially created.
+  created_at DateTime @db.Timestamptz
+  
+  /// Timestamp recording the most recent modification to this variant's
+  /// configuration, price, or stock levels.
+  updated_at DateTime @db.Timestamptz
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  product ecommerce_mall_products @relation(fields: [ecommerce_mall_product_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  variantOptions ecommerce_mall_product_variant_options[]
+  variantCartItems ecommerce_mall_cart_items[]
+  orderItems ecommerce_mall_order_items[]
+  inventoryRecords ecommerce_mall_inventory_records[]
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_mall_product_id, sku_code], map: "ecommerce_mall_product_variants_ecommerce_mall_product_590445e9")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_product_id, status], map: "ecommerce_mall_product_variants_ecommerce_mall_product_c90c3102")
+}
+
+/// Immutable audit ledger capturing point-in-time state transitions for
+/// high-value product catalog, storefront, and transactional entities.
+///
+/// Logs exact "before" and "after" values whenever core commerce records are
+/// modified, ensuring complete data lineage and enabling full historical
+/// reconstruction for post-purchase buyer protection disputes.
+///
+/// All entries are appended sequentially without modification or deletion,
+/// maintaining a permanent and unalterable historical record of platform
+/// interactions and state evolutions.
+///
+/// @namespace ecommerce_mall_catalog
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id @db.Uuid
+  
+  /// Records the unique identifier of the merchant or customer who triggered
+  /// the snapshot event, acting as the initiating authority for the recorded
+  /// state transition.
+  ///
+  /// This reference identifies the specific user responsible for the catalog
+  /// update, review modification, or cancellation request without imposing
+  /// rigid relational boundaries across different authentication domains.
+  actor_id String @db.Uuid
+  
+  /// Specifies the precise role classification of the user who initiated the
+  /// snapshot, distinguishing between platform customers, approved sellers,
+  /// and site administrators.
+  ///
+  /// This classification ensures that the audit trail accurately reflects
+  /// which operational branch triggered the change, supporting granular
+  /// accountability tracking for compliance purposes.
+  actor_type String
+  
+  /// Marks the exact timestamp at which the state transition was permanently
+  /// logged into the append-only audit ledger, providing strict chronological
+  /// ordering for sequential review and reporting.
+  created_at DateTime @db.Timestamptz
+  
+  /// Captures the JSON-formatted structural representation of the entity's
+  /// data immediately following the modification event.
+  ///
+  /// This post-modification payload reflects the definitive new business state
+  /// while maintaining full traceability back to the previous record through
+  /// the immutable historical chain.
+  snapshot_after String
+  
+  /// Stores the JSON-formatted structural representation of the entity's data
+  /// immediately prior to the modification event.
+  ///
+  /// This pre-modification snapshot preserves legacy values required for
+  /// comprehensive historical review, enabling side-by-side comparisons
+  /// against the updated record for dispute resolution and compliance
+  /// auditing.
+  snapshot_before String
+  
+  /// Acts as a polymorphic foreign reference pointing to the primary key of
+  /// the specific entity record affected by the state change, avoiding strict
+  /// relational constraints across isolated domain components.
+  ///
+  /// This flexible reference enables a single audit table to track
+  /// modifications across multiple interconnected business entities without
+  /// requiring separate snapshot tables for each model.
+  snapshot_target_id String @db.Uuid
+  
+  /// Identifies the specific commerce entity class being versioned, ensuring
+  /// accurate classification for downstream audit lookups and filtering.
+  ///
+  /// Supported classifications include products, product variants, seller
+  /// profiles, reviews, order items, and transactional request records.
+  snapshot_type String
+  
+  //----
+  // INDEXES
+  //----
+  @@index([snapshot_type, created_at])
+  @@index([snapshot_after(ops: raw("gin_trgm_ops"))], type: Gin)
+}
+
+/// Stores individual attribute key-value pairs for product variants to
+/// strictly enforce First Normal Form (1NF) normalization.
+///
+/// Each record captures a single option attribute and its associated
+/// specific value, decoupling complex JSON-based variant configurations into
+/// highly queryable, normalized rows. This design supports flexible
+/// attribute expansion across the catalog without requiring schema
+/// migrations, while ensuring optimal indexing performance for variant
+/// discovery.
+///
+/// A composite unique constraint enforces that each variant maintains only
+/// one instance of a particular key-value combination, preventing duplicate
+/// or conflicting attribute assignments.
+///
+/// @namespace ecommerce_mall_catalog
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_product_variant_options {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key uniquely identifying each variant attribute option record.
+  id String @id @db.Uuid
+  
+  /// Foreign key linking this option record to its parent product variant.
+  ///
+  /// Establishes the exclusive parent-child relationship where variants
+  /// aggregate their available options. Foreign key mutations are managed
+  /// exclusively through the parent `ecommerce_mall_product_variants` table to
+  /// maintain referential integrity.
+  ecommerce_mall_product_variant_id String @db.Uuid
+  
+  /// The specific attribute name representing the option category (e.g.,
+  /// 'Size', 'Color', 'Material').
+  ///
+  /// Defines the structural dimension for the variant option, allowing
+  /// multiple distinct options to be queried independently.
+  key String
+  
+  /// The specific attribute value (e.g., 'Large', 'Red', '100% Cotton').
+  ///
+  /// Stores the atomic option value paired with its corresponding key,
+  /// enabling efficient filtering and full-text search indexing across the
+  /// catalog.
+  value String
+  
+  /// Timestamp recording when this variant option record was initially created
+  /// in the database.
+  created_at DateTime @db.Timestamptz
+  
+  /// Timestamp recording the last time this specific variant option record was
+  /// modified or updated.
+  updated_at DateTime @db.Timestamptz
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  // spellchecker: ignore-next-line
+  variant ecommerce_mall_product_variants @relation(fields: [ecommerce_mall_product_variant_id], references: [id], onDelete: Cascade, map: "ecommerce_mall_product_variant_options_ecommerce_mall__7356c94b")
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_mall_product_variant_id, key, value], map: "ecommerce_mall_product_variant_options_ecommerce_mall__fe9f71b3")
+  @@index([key])
+}

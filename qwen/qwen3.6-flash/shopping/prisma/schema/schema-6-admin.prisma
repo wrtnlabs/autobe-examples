@@ -1,0 +1,454 @@
+/// Records applications for elevated platform privileges or administrative
+/// promotion, including the requester's rationale, target grade, and final
+/// approval status.
+///
+/// This entity manages the full lifecycle of role requests, from submission
+/// by a standard administrator to final adjudication by a super
+/// administrator. It captures the business logic for privilege escalation,
+/// ensuring that all grade changes or new super accounts are tracked with
+/// explicit justification and review outcomes. This table supports the
+/// platform's governance structure by maintaining a clear audit trail for
+/// administrative access rights.
+///
+/// The scope covers both the initial request details provided by the
+/// applicant and the final resolution or ongoing status monitored by
+/// platform management systems.
+///
+/// @namespace ecommerce_mall_admin
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_admin_role_requests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id @db.Uuid
+  
+  /// Foreign key referencing the `ecommerce_mall_admins` record of the
+  /// administrator requesting the grade promotion or privilege escalation.
+  ///
+  /// This linkage ensures accountability, tracking exactly who initiated the
+  /// application for role elevation.
+  requester_id String @db.Uuid
+  
+  /// Foreign key referencing the `ecommerce_mall_admins` record of the super
+  /// administrator who resolved or is reviewing this request.
+  ///
+  /// Nullable during the pending state; populated once a decision is finalized
+  /// in the approval workflow.
+  reviewer_id String? @db.Uuid
+  
+  /// Defines the specific administrative grade or privilege level the
+  /// requester is seeking, such as 'regular' or 'super'.
+  ///
+  /// This field establishes the business objective of the request, guiding the
+  /// permissions granted upon approval.
+  target_grade String
+  
+  /// The textual justification provided by the applicant to validate their
+  /// need for elevated privileges.
+  ///
+  /// Capturing the requester's rationale is essential for administrative
+  /// audits and ensuring that privilege escalation follows platform policies.
+  reason String
+  
+  /// Represents the active state of the request within the administrative
+  /// approval workflow.
+  ///
+  /// Common states include 'pending' (awaiting action), 'approved' (privileges
+  /// granted), 'rejected' (request denied), or 'revoked'.
+  status String
+  
+  /// Optional text field capturing the reviewer's comments, justifications, or
+  /// specific instructions when a decision is made.
+  ///
+  /// Provides additional context for audit logs and historical tracking of
+  /// administrative decisions.
+  review_notes String?
+  
+  /// Timestamp recording when the role request was initially submitted by the
+  /// requesting administrator.
+  created_at DateTime @db.Timestamptz
+  
+  /// Timestamp recording the most recent modification to the record, such as
+  /// status updates or the addition of review notes.
+  updated_at DateTime @db.Timestamptz
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  requester ecommerce_mall_admins @relation("ecommerce_mall_admin_role_requests_of_requester_id", fields: [requester_id], references: [id], onDelete: Cascade)
+  reviewer ecommerce_mall_admins? @relation("ecommerce_mall_admin_role_requests_of_reviewer_id", fields: [reviewer_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([reviewer_id])
+  @@index([status])
+  @@index([requester_id, created_at])
+}
+
+/// Manages the vetting process for new merchant account registration,
+/// tracking submission status, administrative approval decisions, and
+/// required rejection reasons.
+///
+/// This table logs the current operational stage of each seller's onboarding
+/// journey, enabling platform oversight and transparent governance.
+/// Administrators record their decisions when reviewing merchant
+/// applications. If an application is denied, a mandatory compliance
+/// rationale is documented to maintain buyer and seller trust.
+///
+/// The model maintains two directional relationships: it anchors to {@link
+/// ecommerce_mall_sellers} to control account activation states, and
+/// references {@link ecommerce_mall_admins} to attribute responsibility for
+/// platform policy enforcement. Audit integrity is maintained through strict
+/// temporal tracking.
+///
+/// @namespace ecommerce_mall_admin
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_seller_approval_reviews {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id @db.Uuid
+  
+  /// Reference to the seller account currently undergoing or having completed
+  /// the platform vetting workflow.
+  ///
+  /// Connects the approval review to the originating merchant profile. The
+  /// relationship ensures that account activation workflows can query the
+  /// current registration phase accurately without altering the seller's base
+  /// credentials.
+  seller_id String @db.Uuid
+  
+  /// Reference to the platform administrator who reviewed the submission,
+  /// rendered the decision, and ensured compliance with onboarding policies.
+  ///
+  /// Attributed to the reviewing authority to guarantee full traceability over
+  /// platform user access decisions. Every approval or rejection action is
+  /// explicitly mapped to an authorized superuser account.
+  admin_id String @db.Uuid
+  
+  /// Current operational stage of the merchant vetting lifecycle, indicating
+  /// whether the registration is pending review, successfully approved, or
+  /// rejected.
+  ///
+  /// Tracks the procedural advancement of the onboarding application. This
+  /// field drives downstream account activation logic and dictates whether the
+  /// seller can access seller-facing features.
+  status String
+  
+  /// Detailed explanation and justification provided by the administrator when
+  /// denying a seller registration. This field is omitted when the status is
+  /// pending or approved.
+  ///
+  /// Captures mandatory compliance warnings, policy violations, or missing
+  /// verification document requirements. Ensures rejected applicants receive
+  /// actionable feedback for future resubmissions.
+  rejection_reason String?
+  
+  /// Timestamp indicating when the approval review record was initialized
+  /// within the platform audit log.
+  created_at DateTime @db.Timestamptz
+  
+  /// Timestamp indicating when the approval review record was last updated or
+  /// its status was transitioned.
+  updated_at DateTime @db.Timestamptz
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  seller ecommerce_mall_sellers @relation(fields: [seller_id], references: [id], onDelete: Cascade)
+  admin ecommerce_mall_admins @relation(fields: [admin_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([seller_id, status])
+  @@index([admin_id, status])
+}
+
+/// Defines the hierarchical product taxonomy strictly managed by platform
+/// administrators, supporting a maximum two-level nesting structure.
+///
+/// The table organizes marketplace items into parent categories and
+/// subcategories. Each entry captures the category title and an optional
+/// descriptive summary used during catalog browsing and product filtering.
+///
+/// @namespace ecommerce_mall_admin
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_shop_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id @db.Uuid
+  
+  /// References the parent category in a maximum two-level hierarchy.
+  ///
+  /// When null, the category is a root category. This self-referential foreign
+  /// key enforces the strict parent-child relationship defined by the business
+  /// taxonomy.
+  parent_id String? @db.Uuid
+  
+  /// The official title of the category used in storefront navigation and
+  /// product filtering.
+  name String
+  
+  /// An optional detailed explanation of the category scope to assist
+  /// administrators and customers in navigating the product hierarchy.
+  description String?
+  
+  /// Timestamp recording when the category was first created.
+  created_at DateTime @db.Timestamptz
+  
+  /// Timestamp recording when the category details were last modified.
+  updated_at DateTime @db.Timestamptz
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  parentCategory ecommerce_mall_shop_categories? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  subCategories ecommerce_mall_shop_categories[] @relation("recursive")
+  
+  //----
+  // INDEXES
+  //----
+  @@index([parent_id])
+  @@index([name(ops: raw("gin_trgm_ops"))], type: Gin)
+}
+
+/// Stores administrative records of user account suspensions, tracking the
+/// enforcer, actor identity, rationale, and enforcement period for customers
+/// or sellers.
+///
+/// This table enforces a polymorphic ownership pattern to support suspending
+/// both customer and seller accounts without creating circular or redundant
+/// foreign keys. By decoupling the core enforcement metadata from the
+/// specific actor identity, the schema ensures strict 3NF compliance while
+/// allowing administrators to audit all enforcement actions in a unified
+/// view. Each suspension record contains the initiating platform
+/// administrator, the actor classification, the enforcement timeline, and
+/// the specific policy violation or operational rationale.
+///
+/// Administrators leverage this table to track active suspensions, view
+/// historical ban records, and calculate enforcement durations. Subtype
+/// tables map this primary enforcement record to the specific customer or
+/// seller identity via a strict one-to-one constraint per enforcement event,
+/// guaranteeing relational integrity across the platform.
+///
+/// {@link ecommerce_mall_customers} | {@link ecommerce_mall_sellers} |
+/// {@link ecommerce_mall_admins}
+///
+/// @namespace ecommerce_mall_admin
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_user_bans {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id @db.Uuid
+  
+  /// Identifies the platform administrator who initiated and approved the
+  /// account suspension.
+  ///
+  /// References the ecommerce_mall_admins table.
+  ///
+  /// {@link ecommerce_mall_admins}
+  admin_id String @db.Uuid
+  
+  /// Classifies the suspended entity type as either a customer or a seller.
+  ///
+  /// Acts as the primary discriminator for the polymorphic ownership pattern,
+  /// directing subsequent queries to the appropriate subtype table.
+  ///
+  /// Allowed values: "customer", "seller".
+  actor_type String
+  
+  /// Captures the detailed rationale or policy violation that triggered the
+  /// account suspension.
+  ///
+  /// Provides transparency for the suspended user and establishes a verifiable
+  /// audit trail for platform safety reviews.
+  reason String
+  
+  /// Timestamp marking the exact moment the account suspension became active.
+  started_at DateTime @db.Timestamptz
+  
+  /// Timestamp indicating when the suspension expires or was officially lifted.
+  ///
+  /// If null, indicates a permanent suspension.
+  ended_at DateTime? @db.Timestamptz
+  
+  /// Date and time the record was created.
+  created_at DateTime @db.Timestamptz
+  
+  /// Date and time the record was last updated.
+  updated_at DateTime @db.Timestamptz
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  admin ecommerce_mall_admins @relation(fields: [admin_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  customerBan ecommerce_mall_user_ban_of_customers?
+  sellerBan ecommerce_mall_user_ban_of_sellers?
+  
+  //----
+  // INDEXES
+  //----
+  @@index([admin_id, started_at])
+  @@index([actor_type])
+}
+
+/// Maps user suspension records specifically to customer actor identities to
+/// complete the polymorphic ownership pattern for customer accounts.
+///
+/// This table acts as a strict 1:1 bridge tying the central moderation queue
+/// to a specific Customer account. It enforces data isolation so that
+/// platform security protocols only target validated customer identities.
+///
+/// Linked directly to {@link ecommerce_mall_user_bans} through its primary
+/// foreign key.
+///
+/// @namespace ecommerce_mall_admin
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_user_ban_of_customers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id @db.Uuid
+  
+  /// Foreign key linking to the parent {@link ecommerce_mall_user_bans} ban
+  /// record.
+  ///
+  /// Guarantees every suspension mapping belongs to a pre-existing ban entry
+  /// in the platform's moderation queue.
+  ecommerce_mall_user_ban_id String @db.Uuid
+  
+  /// Foreign key linking to the targeted {@link ecommerce_mall_customers}
+  /// account.
+  ///
+  /// Identifies the exact customer whose platform access has been suspended by
+  /// administrator moderators.
+  ecommerce_mall_customer_id String @db.Uuid
+  
+  /// Foreign key linking to the {@link ecommerce_mall_customer_sessions}
+  /// active at the time the ban was issued.
+  ///
+  /// Optionally captures the user's session state for audit trail purposes
+  /// when the restriction is enforced.
+  ecommerce_mall_customer_session_id String? @db.Uuid
+  
+  /// Timestamp recording when the polymorphic mapping was established.
+  ///
+  /// Used to audit precisely when a customer's suspension reference was
+  /// attached to their profile in the moderation system.
+  created_at DateTime @db.Timestamptz
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  // spellchecker: ignore-next-line
+  ban ecommerce_mall_user_bans @relation(fields: [ecommerce_mall_user_ban_id], references: [id], onDelete: Cascade, map: "ecommerce_mall_user_ban_of_customers_ecommerce_mall_us_86670847")
+  // spellchecker: ignore-next-line
+  customer ecommerce_mall_customers @relation(fields: [ecommerce_mall_customer_id], references: [id], onDelete: Cascade, map: "ecommerce_mall_user_ban_of_customers_ecommerce_mall_cu_9267efb5")
+  // spellchecker: ignore-next-line
+  customerSession ecommerce_mall_customer_sessions? @relation(fields: [ecommerce_mall_customer_session_id], references: [id], onDelete: Cascade, map: "ecommerce_mall_user_ban_of_customers_ecommerce_mall_cu_c18dfe93")
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_customer_id], map: "ecommerce_mall_user_ban_of_customers_ecommerce_mall_cu_e06375b5")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_customer_session_id], map: "ecommerce_mall_user_ban_of_customers_ecommerce_mall_cu_a623467d")
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_mall_user_ban_id], map: "ecommerce_mall_user_ban_of_customers_ecommerce_mall_us_2ba828ac")
+}
+
+/// Maps user suspension records specifically to seller actor identities to
+/// complete the polymorphic ownership pattern for merchant accounts.
+///
+/// This table serves as the concrete subtype link between the abstract
+/// polymorphic ban entity and actual Seller identities. By maintaining a 1:1
+/// relationship with both the parent `ecommerce_mall_user_bans` table and
+/// the target `ecommerce_mall_sellers` table, it prevents the need for
+/// nullable actor foreign keys on the parent ban record, strictly adhering
+/// to 1NF, 2NF, and 3NF normalization rules.
+///
+/// @namespace ecommerce_mall_admin
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_user_ban_of_sellers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id @db.Uuid
+  
+  /// Links to the parent user ban record, which tracks the overarching
+  /// enforcement timeline, rationale, and status for the account suspension.
+  ///
+  /// This link completes the polymorphic ownership pattern by resolving the
+  /// suspension to a specific Seller entity, thereby preventing the storage of
+  /// nullable foreign keys on the parent record and preserving strict 3NF
+  /// compliance.
+  ecommerce_mall_user_bans_id String @db.Uuid
+  
+  /// Links to the specific Seller actor identity that is subject to this
+  /// suspension.
+  ///
+  /// This foreign key anchors the business rule allowing platform
+  /// administrators to suspend merchant accounts for policy enforcement,
+  /// ensuring the ban is permanently tied to the authenticated Seller identity
+  /// across all platform services.
+  ecommerce_mall_sellers_id String @db.Uuid
+  
+  /// Records the precise timestamp when this suspension was formally mapped to
+  /// the Seller's account identity.
+  ///
+  /// This ensures the platform can maintain an auditable timeline of when
+  /// merchant accounts were placed under suspension, supporting customer
+  /// service and legal compliance requirements.
+  created_at DateTime @db.Timestamptz
+  
+  /// Records the precise timestamp when the linkage between the suspension and
+  /// the Seller was last modified.
+  ///
+  /// This supports standard operational tracking, even though the relationship
+  /// itself is immutable in most scenarios, ensuring consistent CRUD behavior
+  /// across subsidiary models.
+  updated_at DateTime @db.Timestamptz
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  // spellchecker: ignore-next-line
+  ban ecommerce_mall_user_bans @relation(fields: [ecommerce_mall_user_bans_id], references: [id], onDelete: Cascade, map: "ecommerce_mall_user_ban_of_sellers_ecommerce_mall_user_97abd6f3")
+  // spellchecker: ignore-next-line
+  seller ecommerce_mall_sellers @relation(fields: [ecommerce_mall_sellers_id], references: [id], onDelete: Cascade, map: "ecommerce_mall_user_ban_of_sellers_ecommerce_mall_sell_dae28868")
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_mall_user_bans_id], map: "ecommerce_mall_user_ban_of_sellers_ecommerce_mall_user_1a060157")
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_mall_sellers_id], map: "ecommerce_mall_user_ban_of_sellers_ecommerce_mall_sell_bc59cdd6")
+}
