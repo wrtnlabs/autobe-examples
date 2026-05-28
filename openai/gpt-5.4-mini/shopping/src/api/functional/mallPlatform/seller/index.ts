@@ -1,9 +1,0 @@
-export * as sellerAccount from "./sellerAccount/index";
-export * as products from "./products/index";
-export * as orderItems from "./orderItems/index";
-export * as orders from "./orders/index";
-export * as shipments from "./shipments/index";
-export * as sellers from "./sellers/index";
-export * as administratorApprovalRequests from "./administratorApprovalRequests/index";
-export * as approvalRequests from "./approvalRequests/index";
-export * as account from "./account/index";

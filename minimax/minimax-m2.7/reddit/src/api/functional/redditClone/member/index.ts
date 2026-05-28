@@ -1,9 +1,0 @@
-export * as profile from "./profile/index";
-export * as sessions from "./sessions/index";
-export * as communities from "./communities/index";
-export * as subscriptions from "./subscriptions/index";
-export * as posts from "./posts/index";
-export * as redditClone from "./redditClone/index";
-export * as files from "./files/index";
-export * as feed from "./feed/index";
-export * as avatars from "./avatars/index";
